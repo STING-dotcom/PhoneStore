@@ -1,0 +1,13 @@
+@{
+    ViewData["Title"] = "Truy cập bị từ chối";
+    Layout = "_Layout";
+}
+
+<div class="text-center py-5" style="min-height: 50vh; display: flex; flex-direction: column; align-items: center; justify-content: center;">
+    <i class="fa-solid fa-shield-halved" style="font-size: 4rem; color: #ef4444; margin-bottom: 20px;"></i>
+    <h1 class="fw-bold" style="font-size: 2rem; color: #ef4444;">403 - Truy cập bị từ chối</h1>
+    <p class="text-white-50 mt-2" style="font-size: 1rem; max-width: 400px;">Bạn không có quyền truy cập vào trang này. Vui lòng đăng nhập với tài khoản Admin.</p>
+    <a asp-controller="Home" asp-action="Index" class="btn text-white fw-bold mt-3 px-4" style="background: linear-gradient(135deg, #ff6a00, #ee0979); border: none; border-radius: 12px; padding: 12px 30px;">
+        <i class="fa-solid fa-house me-2"></i> Về trang chủ
+    </a>
+</div>

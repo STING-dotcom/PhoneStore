@@ -1,0 +1,74 @@
+@model List<PhoneStore.Models.Order>
+@{
+    ViewData["Title"] = "Lịch sử đơn hàng";
+}
+
+<div class="container py-4" style="max-width: 900px;">
+    <h3 class="fw-bold mb-4" style="background: linear-gradient(135deg, #ff6a00, #ee0979); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+        <i class="fa-solid fa-box me-2"></i>Lịch sử đơn hàng
+    </h3>
+
+    @if (Model.Count == 0)
+    {
+        <div class="text-center py-5" style="background: rgba(9,13,22,0.7); border-radius: 16px; border: 1px solid rgba(255,255,255,0.06);">
+            <i class="fa-solid fa-cart-shopping mb-3" style="font-size: 3rem; color: #64748b;"></i>
+            <h5 class="text-white fw-bold">Chưa có đơn hàng nào</h5>
+            <p class="text-white-50">Hãy mua sắm và quay lại sau nhé!</p>
+            <a href="/Product" class="btn" style="background: linear-gradient(135deg, #ff6a00, #ee0979); color: #fff; border: none; border-radius: 10px; padding: 10px 28px; font-weight: 700;">
+                <i class="fa-solid fa-store me-2"></i>Mua sắm ngay
+            </a>
+        </div>
+    }
+    else
+    {
+        foreach (var order in Model)
+        {
+            <div class="mb-3" style="background: rgba(9,13,22,0.7); border-radius: 16px; border: 1px solid rgba(255,255,255,0.06); overflow: hidden;">
+                <div class="p-4">
+                    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+                        <div>
+                            <span class="fw-bold text-white">#@order.Id</span>
+                            <span class="text-white-50 ms-2" style="font-size: 0.85rem;">@order.OrderDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</span>
+                        </div>
+                        <div class="d-flex gap-2 align-items-center">
+                            @{
+                                var statusBadge = order.Status switch
+                                {
+                                    "Chờ xác nhận" => "background: rgba(255,193,7,0.12); color: #facc15; border: 1px solid rgba(255,193,7,0.2);",
+                                    "Đang xử lý" => "background: rgba(59,130,246,0.12); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2);",
+                                    "Đang giao" => "background: rgba(139,92,246,0.12); color: #a78bfa; border: 1px solid rgba(139,92,246,0.2);",
+                                    "Đã giao" => "background: rgba(16,185,129,0.12); color: #34d399; border: 1px solid rgba(16,185,129,0.2);",
+                                    "Đã hủy" => "background: rgba(239,68,68,0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.2);",
+                                    _ => "background: rgba(255,255,255,0.06); color: #94a3b8; border: 1px solid rgba(255,255,255,0.1);"
+                                };
+                            }
+                            <span class="badge" style="@statusBadge padding: 6px 14px; border-radius: 8px; font-size: 0.78rem; font-weight: 700;">
+                                @order.Status
+                            </span>
+                        </div>
+                    </div>
+
+                    @foreach (var item in order.Items)
+                    {
+                        <div class="d-flex justify-content-between align-items-center py-2" style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                            <div>
+                                <span class="text-white">@item.ProductName</span>
+                                <span class="text-white-50 ms-2" style="font-size: 0.8rem;">x@(item.Quantity)</span>
+                            </div>
+                            <span class="text-white fw-semibold">@item.Subtotal.ToString("N0")đ</span>
+                        </div>
+                    }
+
+                    <div class="d-flex justify-content-between align-items-center mt-3 pt-2" style="border-top: 1px solid rgba(255,255,255,0.08);">
+                        <div>
+                            <small class="text-white-50">@order.PaymentMethodLabel</small>
+                        </div>
+                        <div>
+                            <span class="fw-bold" style="color: #ff6a00; font-size: 1.1rem;">Tổng: @order.TotalAmount.ToString("N0")đ</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    }
+</div>

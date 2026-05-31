@@ -1,0 +1,1040 @@
+﻿@model Tuple<List<PhoneStore.Models.Product>, List<PhoneStore.Models.Product>>
+@using PhoneStore.Controllers
+
+@{
+    ViewData["Title"] = "Cửa Hàng Điện Thoại - Nhóm 6";
+
+    // 📥 LẤY DỮ LIỆU TỪ CONTROLLER TRUYỀN SANG
+    var newProducts = Model?.Item1 ?? new List<PhoneStore.Models.Product>();
+    var trendingProducts = Model?.Item2 ?? new List<PhoneStore.Models.Product>();
+
+    // ✂️ LỌC BỎ VÙNG MỚI RA MẮT: Tự động loại bỏ hoàn toàn 2 sản phẩm lỗi ảnh đầu danh sách từ Controller
+    if (newProducts.Count >= 2)
+    {
+        newProducts = newProducts.Skip(2).ToList();
+    }
+    else
+    {
+        newProducts.Clear();
+    }
+
+    // ✂️ LỌC BỎ VÙNG BÁN CHẠY: Tự động loại bỏ hoàn toàn 3 sản phẩm lỗi ảnh đầu danh sách từ Controller
+    if (trendingProducts.Count >= 3)
+    {
+        trendingProducts = trendingProducts.Skip(3).ToList();
+    }
+    else
+    {
+        trendingProducts.Clear();
+    }
+
+    // ⚡ DANH SÁCH SẢN PHẨM KHUYẾN MÃI LỚN (FLASH SALE) ĐỘC QUYỀN
+    var flashSaleProducts = new List<dynamic>
+    {
+        new { Id = 1, Name = "iPhone 15 Pro Max 256GB", Description = "Deal chớp nhoáng, số lượng có hạn kịch sàn ngày hôm nay.", OriginalPrice = 29990000, FlashPrice = 25990000, ImageUrl = "/images/ProductsApple/iPhone15-promax.jpg" },
+        new { Id = 11, Name = "Samsung Galaxy S24 Ultra", Description = "Quyền năng Galaxy AI trợ giá cực khủng duy nhất khung giờ này.", OriginalPrice = 27490000, FlashPrice = 22490000, ImageUrl = "/images/ProductsSamsung/SamsungS24Ultra.jpg" },
+        new { Id = 21, Name = "Xiaomi 14 Ultra 5G", Description = "Ống kính Leica đỉnh cao công nghệ xả kho sập giá.", OriginalPrice = 21990000, FlashPrice = 18190000, ImageUrl = "/images/ProductsXiaomi/Xiaomi14ultra.jpg" },
+        new { Id = 150, Name = "OPPO Find X7 Ultra", Description = "Siêu phẩm camera tàu ngầm kép ưu đãi đặt mua ngay.", OriginalPrice = 19500000, FlashPrice = 15890000, ImageUrl = "/images/ProductsOppo/OPPO Find X7 Ultra.jpg" },
+        new { Id = 7, Name = "iPhone 13 128GB VNA", Description = "Sản phẩm quốc dân giảm sâu chưa từng có tiền lệ.", OriginalPrice = 13690000, FlashPrice = 11250000, ImageUrl = "/images/ProductsApple/iPhone 13 128GB VNA.jpg" },
+        new { Id = 17, Name = "Samsung Galaxy A55 5G", Description = "Tầm trung kháng nước, hiệu năng bền bỉ cắt giá cực sâu.", OriginalPrice = 9690000, FlashPrice = 7790000, ImageUrl = "/images/ProductsSamsung/SamsungA55-5G.jpg" },
+        new { Id = 2, Name = "iPhone 15 Pro 128GB", Description = "Khung viền Titanium, hiệu năng tiệm cận bản Pro Max trợ giá giờ vàng.", OriginalPrice = 24990000, FlashPrice = 21890000, ImageUrl = "/images/ProductsApple/Iphone15pro.jpg" },
+        new { Id = 149, Name = "Samsung Galaxy Z Fold5 5G", Description = "Đỉnh cao màn hình gập đa nhiệm, giảm sốc trực tiếp vào giá bán.", OriginalPrice = 32990000, FlashPrice = 26490000, ImageUrl = "/images/ProductsSamsung/Samsung Galaxy Z Fold5 5G.jpg" },
+        new { Id = 151, Name = "OPPO Reno11 Pro 5G", Description = "Chuyên gia chân dung thế hệ mới, mặt lưng dòng chảy ưu đãi cực sâu.", OriginalPrice = 14990000, FlashPrice = 11990000, ImageUrl = "/images/ProductsOppo/OPPO Reno11 Pro 5G.jpg" },
+        new { Id = 25, Name = "Xiaomi Redmi Note 13 Pro+", Description = "Màn hình cong cao cấp, camera 200MP sạc siêu tốc xả kho giá sốc.", OriginalPrice = 9990000, FlashPrice = 7990000, ImageUrl = "/images/ProductsXiaomi/redminote13pro+.jpg" }
+    };
+
+    // 🛠️ BÙ ĐẮP DỮ LIỆU MẪU CHUẨN (CÓ SẴN ẢNH ĐẸP) VÀO VÙNG MỚI RA MẮT
+    if (newProducts.Count < 10)
+    {
+        var mockNew = new List<PhoneStore.Models.Product>
+        {
+            new PhoneStore.Models.Product { Id = 21, Name = "Xiaomi 14 Ultra 5G", Description = "Hợp tác Leica đỉnh cao nhiếp ảnh, Cấu hình Snapdragon 8 Gen 3 thách thức mọi tựa game.", Price = 21990000, ImageUrl = "/images/ProductsXiaomi/Xiaomi14ultra.jpg" },
+            new PhoneStore.Models.Product { Id = 150, Name = "OPPO Find X7 Ultra", Description = "Hệ thống camera tàu ngầm kép đầu tiên thế giới, Màn hình 2K AMOLED siêu rực rỡ.", Price = 19500000, ImageUrl = "/images/ProductsOppo/OPPO Find X7 Ultra.jpg" },
+            new PhoneStore.Models.Product { Id = 1, Name = "iPhone 15 Pro Max 256GB", Description = "Chip A17 Pro siêu mạnh, Khung viền Titanium siêu nhẹ, Camera zoom quang học 5x.", Price = 29990000, ImageUrl = "/images/ProductsApple/iPhone15-promax.jpg" },
+            new PhoneStore.Models.Product { Id = 11, Name = "Samsung Galaxy S24 Ultra", Description = "Quyền năng Galaxy AI, Camera mắt thần 200MP, Bút S-Pen trợ lý công việc hiệu quả.", Price = 27490000, ImageUrl = "/images/ProductsSamsung/SamsungS24Ultra.jpg" },
+            new PhoneStore.Models.Product { Id = 41, Name = "Vivo X100 Pro 5G", Description = "Chip xử lý hình ảnh V3 độc quyền, Ống kính lớp phủ Zeiss T* chống lóa hoàn hảo.", Price = 18990000, ImageUrl = "/images/ProductsVivo/VivoX100Pro-5G.jpg" },
+            new PhoneStore.Models.Product { Id = 147, Name = "iPhone 14 Plus 128GB", Description = "Không gian hiển thị rộng rãi, Thời lượng pin trâu nhất lịch sử các dòng iPhone.", Price = 17990000, ImageUrl = "/images/ProductsApple/Iphone 14 Plus.jpg" },
+            new PhoneStore.Models.Product { Id = 148, Name = "Realme GT 5 Pro", Description = "Sát thủ cấu hình phân khúc, Công nghệ sạc siêu nhanh 100W, Tần số quét màn hình 144Hz.", Price = 12490000, ImageUrl = "/images/ProductsRealme/Realme GT 5 Pro.jpg" },
+            new PhoneStore.Models.Product { Id = 61, Name = "OnePlus 12 5G", Description = "Màn hình bo cong tràn viền quyến rũ, Tản nhiệt buồng hơi siêu lớn mát lạnh khi gaming.", Price = 16990000, ImageUrl = "/images/ProductsOnePlus/OnePlus12-5G.jpg" },
+            new PhoneStore.Models.Product { Id = 141, Name = "Sony Xperia 1 V", Description = "Cảm biến hình ảnh mang tính cách mạng, Màn hình 4K tỷ lệ 21:9 chuẩn điện ảnh.", Price = 24990000, ImageUrl = "/images/ProductsSony/Sony Xperia 1 V.jpg" },
+            new PhoneStore.Models.Product { Id = 112, Name = "Asus ROG Phone 8", Description = "Quái vật gaming đích thực cho game thủ, Thiết kế tối giản tích hợp đèn LED Anime Matrix.", Price = 22990000, ImageUrl = "/images/ProductsROG/Asus ROG Phone 8.jpg" }
+        };
+        foreach (var item in mockNew) { if (newProducts.Count < 10) newProducts.Add(item); }
+    }
+
+    // 🛠️ BÙ ĐẮP DỮ LIỆU MẪU CHUẨN (CÓ SẴN ẢNH ĐẸP) VÀO VÙNG XU HƯỚNG BÁN CHẠY
+    if (trendingProducts.Count < 10)
+    {
+        var mockTrending = new List<PhoneStore.Models.Product>
+        {
+            new PhoneStore.Models.Product { Id = 7, Name = "iPhone 13 128GB VNA", Description = "Sản phẩm bán chạy nhất mọi thời đại, Hiệu năng Apple A15 Bionic bền bỉ theo năm tháng.", Price = 13690000, ImageUrl = "/images/ProductsApple/iPhone 13 128GB VNA.jpg" },
+            new PhoneStore.Models.Product { Id = 17, Name = "Samsung Galaxy A55 5G", Description = "Thiết kế mặt lưng kính cao cấp, Kháng nước chuẩn IP67, Camera chống rung OAI đỉnh cao.", Price = 9690000, ImageUrl = "/images/ProductsSamsung/SamsungA55-5G.jpg" },
+            new PhoneStore.Models.Product { Id = 26, Name = "Redmi Note 13 Pro 4G", Description = "Bộ ba Camera siêu nét 200MP, Sạc tăng tốc Turbo 67W, Viền màn hình mỏng siêu sexy.", Price = 5990000, ImageUrl = "/images/ProductsXiaomi/redminote13pro-5G.jpg" },
+            new PhoneStore.Models.Product { Id = 9, Name = "iPhone 11 64GB", Description = "Giá cực tốt để trải nghiệm hệ sinh thái iOS, Pin trâu bỉ, Chụp hình chân dung chuẩn xác.", Price = 8490000, ImageUrl = "/images/ProductsApple/Iphone11.jpg" },
+            new PhoneStore.Models.Product { Id = 35, Name = "OPPO Reno11 F 5G", Description = "Chuyên gia chân dung chụp ảnh siêu ảo, Thiết kế hiệu ứng vân kim cương độc bản bắt mắt.", Price = 8290000, ImageUrl = "/images/ProductsOppo/OPPOReno11F-5G.jpg" },
+            new PhoneStore.Models.Product { Id = 16, Name = "Samsung Galaxy S23 FE", Description = "Cấu hình cao cấp Flagship giá sinh viên, Quay phim điện ảnh chống rung đêm Nightography.", Price = 12490000, ImageUrl = "/images/ProductsSamsung/SamsungS23FE.jpg" },
+            new PhoneStore.Models.Product { Id = 24, Name = "Poco X6 Pro 5G", Description = "Vua hiệu năng phân khúc tầm trung, Cân mượt mà hoàn hảo mọi tựa game đồ họa nặng.", Price = 7990000, ImageUrl = "/images/ProductsXiaomi/pocox6pro-5G.jpg" },
+            new PhoneStore.Models.Product { Id = 52, Name = "Realme 12 Pro+ 5G", Description = "Thiết kế lấy cảm hứng từ đồng hồ xa xỉ, Mặt lưng da sinh học cao cấp chống bám vân tay.", Price = 9190000, ImageUrl = "/images/ProductsRealme/Realme12ProPlus-5G.jpg" },
+            new PhoneStore.Models.Product { Id = 74, Name = "Honor 90 5G", Description = "Màn hình bảo vệ mắt giảm mỏi điều xung 3840Hz, Thiết kế mỏng nhẹ tinh xảo thời thượng.", Price = 8990000, ImageUrl = "/images/ProductsHonor/Honor90-5G.jpg" },
+            new PhoneStore.Models.Product { Id = 144, Name = "Nubia Neo 2 Gaming", Description = "Thiết kế đậm chất cơ khí Mecha viễn tưởng, Nút Trigger cảm ứng hỗ trợ thao tác nhanh.", Price = 4590000, ImageUrl = "/images/ProductsNubia/Nubia Neo 2 Gaming.jpg" }
+        };
+        foreach (var item in mockTrending) { if (trendingProducts.Count < 10) trendingProducts.Add(item); }
+    }
+}
+
+<style>
+    /* ==========================================================================
+       🌌 GIAO DIỆN HYBRID: NỀN KHỐI TỐI MẠCH ĐIỆN - CARD SẢN PHẨM NỀN TRẮNG TINH KHÔI
+       ========================================================================== */
+
+    /* 1. Nền tối trong suốt của các phân khu lớn để lộ mạch điện chạy ngầm phía sau */
+    .section-flashsale, 
+    .section-new-releases, 
+    .section-trending {
+        background: rgba(13, 18, 30, 0.5) !important;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6) !important;
+        border-radius: 24px !important;
+        padding: 30px;
+        margin-bottom: 45px;
+    }
+
+    /* Đường viền Neon phát quang mảnh định hình phân khu */
+    .section-flashsale { border: 1px solid rgba(249, 115, 22, 0.35) !important; }
+    .section-new-releases { border: 1px solid rgba(238, 9, 121, 0.35) !important; }
+    .section-trending { border: 1px solid rgba(34, 197, 94, 0.35) !important; }
+
+    /* Tiêu đề phân khu luôn sáng bừng */
+    .section-flashsale h2, 
+    .section-new-releases h4, 
+    .section-trending h4 {
+        color: #ffffff !important;
+        text-shadow: 0 2px 10px rgba(0, 0, 0, 0.9) !important;
+    }
+
+    /* 2. CARD SẢN PHẨM: Chỉ nền trắng cho khung ảnh, thân card trong suốt */
+    .product-card-custom {
+        background: rgba(9, 13, 22, 0.85) !important;
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255, 255, 255, 0.08) !important;
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.15) !important;
+        border-radius: 16px !important;
+        overflow: hidden;
+        transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .product-card-custom .card-img-top {
+        background: #ffffff !important;
+        object-fit: contain;
+        padding: 15px;
+    }
+
+    /* Hiệu ứng di chuột đẩy card lên và đổ bóng màu neon nhẹ phía sau */
+    .product-card-custom:hover, .card:hover {
+        transform: translateY(-8px) !important;
+        box-shadow: 0 20px 35px rgba(238, 9, 121, 0.2) !important;
+        border-color: #ff6a00 !important;
+    }
+
+    /* Card text: màu sáng trên nền tối */
+    .product-card-custom .card-title,
+    .product-card-custom h6,
+    .product-card-custom .card-text {
+        color: #f1f5f9 !important;
+    }
+
+    .product-card-custom p.text-muted {
+        color: #94a3b8 !important;
+        opacity: 1 !important;
+    }
+
+    /* Định dạng giá tiền rực rỡ trên nền trắng */
+    .product-card-custom .price-new {
+        color: #dc2626 !important; /* Giá mới màu đỏ đậm kích thích mua hàng */
+        font-weight: 800 !important;
+    }
+    .price-old-crossed {
+        color: #94a3b8 !important;
+        text-decoration: line-through !important;
+        font-size: 0.85rem;
+        margin-left: 6px;
+    }
+
+    /* Nút "Xem Chi Tiết" đồng bộ độc nhất */
+    .btn-view-custom {
+        font-weight: 700 !important;
+        padding: 9px 12px !important;
+        border-radius: 10px !important;
+        color: #ffffff !important;
+        border: none !important;
+        transition: all 0.2s ease;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        display: block;
+        width: 100%;
+        text-align: center;
+        text-decoration: none !important;
+    }
+    
+    /* Màu nút Xem động theo từng phân khu */
+    .btn-view-flash { background: linear-gradient(135deg, #f97316, #ea580c) !important; }
+    .btn-view-new { background: linear-gradient(135deg, #ff6a00, #ee0979) !important; }
+    .btn-view-trending { background: linear-gradient(135deg, #11998e, #38ef7d) !important; }
+
+    .btn-view-custom:hover {
+        transform: scale(1.02);
+        filter: brightness(1.1);
+        color: #ffffff !important;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* Mũi tên điều hướng Carousel vòng tròn */
+    .btn-arrow-custom {
+        width: 42px;
+        height: 42px;
+        border-radius: 50% !important;
+        background: rgba(30, 41, 59, 0.8) !important;
+        border: 1px solid rgba(255, 255, 255, 0.15) !important;
+        color: #f1f5f9 !important;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.25s ease;
+    }
+    .btn-arrow-flash:hover:not(:disabled) { background: linear-gradient(135deg, #f97316, #ea580c) !important; color: white !important; transform: scale(1.1); }
+    .btn-arrow-new:hover:not(:disabled) { background: linear-gradient(135deg, #ff6a00, #ee0979) !important; color: white !important; transform: scale(1.1); }
+    .btn-arrow-trending:hover:not(:disabled) { background: linear-gradient(135deg, #11998e, #38ef7d) !important; color: white !important; transform: scale(1.1); }
+    
+    .btn-arrow-custom:disabled {
+        opacity: 0.25;
+        cursor: not-allowed;
+        background: #1e293b !important;
+        color: #64748b !important;
+    }
+
+    /* ⏱️ ĐỒNG HỒ ĐẾM NGƯỢC GIỜ VÀNG */
+    .countdown-wrapper {
+        background: #0f172a !important;
+        border: 1px solid rgba(253, 224, 71, 0.4) !important;
+        color: #fde047 !important;
+        font-family: 'Courier New', Courier, monospace;
+        font-weight: 800;
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-size: 1.1rem;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    /* Hoạt họa Staggered Pop-In */
+    @@keyframes magicCardReveal {
+        0% { opacity: 0; transform: translateY(30px) scale(0.95); filter: blur(4px); }
+        100% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+    }
+    .magic-reveal-active {
+        animation: magicCardReveal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards !important;
+    }
+
+    /* ===== 3D HERO BANNER SIÊU CUỐN HÚT ===== */
+    .hero-3d-wrapper {
+        width: 100vw;
+        position: relative;
+        left: 50%; right: 50%;
+        margin-left: -50vw; margin-right: -50vw;
+        margin-top: -48px; margin-bottom: 50px;
+        background: radial-gradient(ellipse at 20% 50%, #0c1428 0%, #060912 70%);
+        overflow: hidden;
+        padding: 70px 0 90px;
+        perspective: 1200px;
+    }
+    .hero-3d-wrapper::after {
+        content: '';
+        position: absolute; inset: 0;
+        background:
+            radial-gradient(circle at 80% 20%, rgba(59,130,246,0.06) 0%, transparent 50%),
+            radial-gradient(circle at 20% 80%, rgba(16,185,129,0.04) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(255,106,0,0.03) 0%, transparent 50%);
+        pointer-events: none;
+    }
+    .hero-grid-bg {
+        position: absolute; inset: 0;
+        background-image:
+            linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+        background-size: 60px 60px;
+        mask-image: radial-gradient(ellipse at 50% 50%, black 40%, transparent 70%);
+        -webkit-mask-image: radial-gradient(ellipse at 50% 50%, black 40%, transparent 70%);
+        pointer-events: none;
+    }
+    .hero-3d-wrapper .orb {
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+        filter: blur(70px);
+    }
+    .hero-3d-wrapper .orb-1 {
+        width: 500px; height: 500px;
+        top: -20%; left: 10%;
+        background: radial-gradient(circle, rgba(59,130,246,0.15), transparent 70%);
+        animation: orbFloat1 8s infinite alternate ease-in-out;
+    }
+    .hero-3d-wrapper .orb-2 {
+        width: 400px; height: 400px;
+        bottom: -15%; right: 15%;
+        background: radial-gradient(circle, rgba(238,9,121,0.12), transparent 70%);
+        animation: orbFloat2 10s infinite alternate ease-in-out;
+    }
+    .hero-3d-wrapper .orb-3 {
+        width: 300px; height: 300px;
+        top: 30%; left: 60%;
+        background: radial-gradient(circle, rgba(255,106,0,0.1), transparent 70%);
+        animation: orbFloat3 7s infinite alternate ease-in-out;
+    }
+    @@keyframes orbFloat1 { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(60px,-40px) scale(1.15); } }
+    @@keyframes orbFloat2 { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(-50px,30px) scale(1.2); } }
+    @@keyframes orbFloat3 { 0% { transform: translate(0,0) scale(1); } 100% { transform: translate(40px,40px) scale(1.1); } }
+
+    .hero-3d-stage {
+        position: relative;
+        z-index: 2;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        min-height: 460px;
+    }
+    .hero-3d-content {
+        flex: 1 1 0;
+        max-width: 780px;
+        transform-style: preserve-3d;
+        transition: transform 0.15s ease-out;
+        padding-right: 60px;
+    }
+    .hero-3d-content .badge-3d {
+        display: inline-block;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(59,130,246,0.35);
+        padding: 6px 18px;
+        border-radius: 30px;
+        font-size: 0.78rem;
+        font-weight: 800;
+        color: #60a5fa;
+        transform: translateZ(30px);
+        margin-bottom: 14px;
+    }
+    .hero-3d-content .badge-3d i { margin-right: 8px; }
+
+    .hero-3d-title {
+        font-size: 3.6rem;
+        font-weight: 900;
+        line-height: 1.15;
+        color: #ffffff;
+        margin-bottom: 16px;
+        transform: translateZ(50px);
+        text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+    }
+    .hero-3d-title .gradient-text {
+        background: linear-gradient(135deg, #60a5fa, #a78bfa, #f472b6);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .hero-3d-title .gradient-text-orange {
+        background: linear-gradient(135deg, #ff6a00, #ee0979);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .hero-3d-title .gradient-text-green {
+        background: linear-gradient(135deg, #10b981, #38ef7d);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    .hero-3d-desc {
+        color: #94a3b8;
+        font-size: 1.1rem;
+        line-height: 1.7;
+        margin-bottom: 32px;
+        transform: translateZ(20px);
+        max-width: 660px;
+    }
+    .hero-3d-buttons {
+        display: flex;
+        gap: 14px;
+        transform: translateZ(40px);
+    }
+    .hero-3d-buttons .btn-3d-primary {
+        background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+        color: #fff;
+        padding: 14px 34px;
+        border-radius: 14px;
+        font-weight: 800;
+        font-size: 0.95rem;
+        text-decoration: none;
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        box-shadow: 0 6px 25px rgba(59,130,246,0.35);
+        border: none;
+    }
+    .hero-3d-buttons .btn-3d-primary:hover {
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: 0 10px 35px rgba(59,130,246,0.5);
+        color: #fff;
+    }
+    .hero-3d-buttons .btn-3d-outline {
+        color: #f1f5f9;
+        padding: 14px 30px;
+        border-radius: 14px;
+        font-weight: 700;
+        text-decoration: none;
+        border: 2px solid rgba(255,255,255,0.15);
+        transition: all 0.3s;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .hero-3d-buttons .btn-3d-outline:hover {
+        border-color: #60a5fa;
+        background: rgba(59,130,246,0.08);
+        color: #fff;
+        transform: translateY(-2px);
+    }
+
+    /* === 3D SHOWCASE CARD === */
+    .hero-3d-showcase {
+        flex: 0 0 440px;
+        height: 450px;
+        position: relative;
+        transform-style: preserve-3d;
+        transition: transform 0.15s ease-out;
+        margin-left: auto;
+    }
+    .hero-3d-card {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 28px;
+        background: rgba(15,23,42,0.6);
+        backdrop-filter: blur(12px);
+        border: 1px solid rgba(255,255,255,0.06);
+        box-shadow: 0 30px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+        transform-style: preserve-3d;
+        backface-visibility: hidden;
+        transition: opacity 0.6s ease, transform 0.6s ease;
+        padding: 40px 30px;
+        text-align: center;
+    }
+    .hero-3d-card .card-3d-glow {
+        position: absolute;
+        width: 180px; height: 180px;
+        border-radius: 50%;
+        filter: blur(60px);
+        pointer-events: none;
+        top: 10%; left: 50%;
+        transform: translateX(-50%);
+    }
+    .hero-3d-card h3 {
+        font-weight: 900;
+        font-size: 1.6rem;
+        color: #ffffff;
+        margin-bottom: 10px;
+        transform: translateZ(40px);
+    }
+    .hero-3d-card p {
+        color: #94a3b8;
+        font-size: 0.9rem;
+        line-height: 1.6;
+        max-width: 320px;
+        transform: translateZ(25px);
+        margin: 0;
+    }
+    .hero-3d-card.active { opacity: 1; transform: scale(1) translateZ(0); }
+    .hero-3d-card:not(.active) { opacity: 0; transform: scale(0.85) translateZ(-50px); position: absolute; }
+
+    .hero-3d-img-wrap {
+        width: 220px;
+        height: 220px;
+        background: rgba(15,23,42,0.5);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+        transform: translateZ(60px);
+        box-shadow: 0 15px 50px rgba(0,0,0,0.3);
+        transition: transform 0.3s;
+    }
+    .hero-3d-img-wrap .hero-theme-icon {
+        font-size: 4.5rem;
+        filter: drop-shadow(0 8px 20px rgba(0,0,0,0.3));
+    }
+    .hero-3d-card .hero-stats-mini {
+        display: flex;
+        gap: 14px;
+        transform: translateZ(30px);
+        margin-top: 10px;
+    }
+    .hero-3d-card .hero-stats-mini span {
+        font-size: 0.72rem;
+        font-weight: 700;
+        color: #94a3b8;
+        background: rgba(255,255,255,0.03);
+        border: 1px solid rgba(255,255,255,0.06);
+        padding: 4px 12px;
+        border-radius: 20px;
+    }
+    .hero-3d-img-label {
+        margin-top: 16px;
+        transform: translateZ(30px);
+    }
+    .hero-3d-img-label .badge-img-label {
+        display: inline-block;
+        background: rgba(59,130,246,0.15);
+        color: #60a5fa;
+        border: 1px solid rgba(59,130,246,0.3);
+        padding: 6px 18px;
+        border-radius: 30px;
+        font-size: 0.82rem;
+        font-weight: 700;
+    }
+    .hero-3d-img-label .badge-img-label i { margin-right: 6px; }
+
+    .hero-3d-card .card-3d-glow {
+        position: absolute;
+        width: 180px; height: 180px;
+        border-radius: 50%;
+        filter: blur(60px);
+        pointer-events: none;
+        top: 10%; left: 50%;
+        transform: translateX(-50%);
+    }
+
+    /* Dots navigation */
+    .hero-3d-dots {
+        position: absolute;
+        bottom: 30px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 10;
+        display: flex;
+        gap: 10px;
+    }
+    .hero-3d-dots .dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.12);
+        border: none;
+        cursor: pointer;
+        transition: all 0.4s;
+        padding: 0;
+    }
+    .hero-3d-dots .dot.active {
+        width: 32px;
+        border-radius: 6px;
+        background: linear-gradient(90deg, #3b82f6, #8b5cf6);
+        box-shadow: 0 0 15px rgba(59,130,246,0.4);
+    }
+    .hero-3d-dots .dot:hover {
+        background: rgba(255,255,255,0.25);
+    }
+
+    /* Floating particles */
+    .hero-particle {
+        position: absolute;
+        border-radius: 50%;
+        pointer-events: none;
+        z-index: 1;
+    }
+    @@keyframes particleFloat {
+        0%, 100% { transform: translateY(0) scale(1); opacity: 0.3; }
+        50% { transform: translateY(-30px) scale(1.4); opacity: 0.8; }
+    }
+
+    @@media (max-width: 991px) {
+        .hero-3d-wrapper { padding: 50px 0 60px; }
+        .hero-3d-stage { flex-direction: column; min-height: auto; text-align: center; }
+        .hero-3d-content { max-width: 100%; }
+        .hero-3d-title { font-size: 2.2rem; }
+        .hero-3d-desc { margin-left: auto; margin-right: auto; }
+        .hero-3d-buttons { justify-content: center; flex-wrap: wrap; }
+        .hero-3d-showcase { flex: none; width: 100%; max-width: 400px; height: 320px; margin-top: 30px; }
+        .hero-3d-card { padding: 30px 20px; }
+        .hero-3d-img-wrap { width: 160px; height: 160px; padding: 15px; }
+    }
+    @@media (max-width: 576px) {
+        .hero-3d-wrapper { padding: 40px 0 50px; margin-bottom: 30px; }
+        .hero-3d-title { font-size: 1.6rem; }
+        .hero-3d-desc { font-size: 0.9rem; }
+        .hero-3d-buttons .btn-3d-primary,
+        .hero-3d-buttons .btn-3d-outline { font-size: 0.8rem; padding: 11px 22px; }
+        .hero-3d-showcase { height: 260px; }
+        .hero-3d-img-wrap { width: 120px; height: 120px; padding: 10px; }
+    }
+
+    /* 4 Ô TÍNH NĂNG KÍNH MỜ */
+    .aurora-box {
+        position: relative; background: rgba(17, 24, 39, 0.72) !important;
+        border: 1px solid rgba(255, 255, 255, 0.06) !important;
+        border-radius: 18px !important; padding: 26px 18px !important; overflow: hidden; z-index: 1; cursor: pointer;
+        transition: transform 0.4s cubic-bezier(0.2, 1, 0.2, 1), border-color 0.4s, box-shadow 0.4s;
+    }
+    .aurora-box:hover { transform: scale(1.04) translateY(-4px) !important; }
+    .aurora-effect {
+        position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; opacity: 0; z-index: -1;
+        mix-blend-mode: screen; filter: blur(35px); transition: opacity 0.5s ease;
+    }
+    .aurora-box:hover .aurora-effect { opacity: 0.32; animation: auroraWaveEffect 5.5s infinite linear; }
+    @@keyframes auroraWaveEffect { 0% { transform: translate(0, 0) rotate(0deg); } 50% { transform: translate(-6%, -10%) rotate(180deg); } 100% { transform: translate(0, 0) rotate(360deg); } }
+    
+    .aurora-red .aurora-effect { background: radial-gradient(circle, rgba(239, 68, 68, 0.9) 0%, rgba(185, 28, 28, 0.3) 45%, transparent 70%); }
+    .aurora-red:hover { border-color: rgba(239, 68, 68, 0.45) !important; box-shadow: 0 12px 30px rgba(239, 68, 68, 0.18); }
+    .aurora-red i { color: #ef4444 !important; }
+
+    .aurora-yellow .aurora-effect { background: radial-gradient(circle, rgba(234, 179, 8, 0.9) 0%, rgba(161, 98, 7, 0.3) 45%, transparent 70%); }
+    .aurora-yellow:hover { border-color: rgba(234, 179, 8, 0.45) !important; box-shadow: 0 12px 30px rgba(234, 179, 8, 0.18); }
+    .aurora-yellow i { color: #eab308 !important; }
+
+    .aurora-blue .aurora-effect { background: radial-gradient(circle, rgba(59, 130, 246, 0.9) 0%, rgba(29, 78, 216, 0.3) 45%, transparent 70%); }
+    .aurora-blue:hover { border-color: rgba(59, 130, 246, 0.45) !important; box-shadow: 0 12px 30px rgba(59, 130, 246, 0.18); }
+    .aurora-blue i { color: #3b82f6 !important; }
+
+    .aurora-green .aurora-effect { background: radial-gradient(circle, rgba(34, 197, 94, 0.9) 0%, rgba(21, 128, 61, 0.3) 45%, transparent 70%); }
+    .aurora-green:hover { border-color: rgba(34, 197, 94, 0.45) !important; box-shadow: 0 12px 30px rgba(34, 197, 94, 0.18); }
+    .aurora-green i { color: #22c55e !important; }
+
+    .aurora-box h6 { color: #ffffff !important; font-weight: 800; margin-top: 12px; margin-bottom: 5px; }
+    .aurora-box small { color: #94a3b8 !important; font-size: 0.85rem; }
+</style>
+
+<div class="hero-3d-wrapper">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+    <div class="hero-grid-bg"></div>
+
+    <div class="container position-relative" style="z-index: 3;">
+        <div class="hero-3d-stage" id="hero3dStage">
+            <div class="hero-3d-content" id="hero3dContent">
+                <div class="badge-3d" id="heroBadge"><i class="fa-solid fa-bolt-lightning"></i> <span id="heroBadgeText">THẾ HỆ SMARTPHONE 2026</span></div>
+                <div class="hero-3d-title" id="heroSlideTitle">
+                    <span id="heroTitleLine1">KHO SẢN PHẨM</span><br>
+                    <span class="gradient-text" id="heroTitleLine2">ĐA DẠNG &amp; CHẤT LƯỢNG</span>
+                </div>
+                <div class="hero-3d-desc" id="heroSlideDesc">
+                    Hơn 151 mẫu điện thoại từ các thương hiệu hàng đầu: Apple, Samsung, Xiaomi, OPPO, Sony, Nokia và nhiều hãng khác.
+                </div>
+                <div class="hero-3d-buttons">
+                    <a href="#flashsale-section" class="btn-3d-primary"><i class="fa-solid fa-bolt"></i> Khám Phá Ngay</a>
+                    <a href="/Product" class="btn-3d-outline"><i class="fa-solid fa-store"></i> Cửa Hàng</a>
+                </div>
+            </div>
+
+            <div class="hero-3d-showcase" id="hero3dShowcase">
+                <div class="hero-3d-card active" data-index="0">
+                    <div class="card-3d-glow" style="background: radial-gradient(circle, rgba(59,130,246,0.25), transparent);"></div>
+                    <div class="hero-3d-img-wrap">
+                        <i class="fa-solid fa-mobile-screen-button hero-theme-icon" style="color: #60a5fa;"></i>
+                    </div>
+                    <h3 style="color: #60a5fa;">151+ Sản phẩm</h3>
+                    <p>Apple, Samsung, Xiaomi, OPPO, Sony, Nokia — đầy đủ phân khúc từ flagship đến giá rẻ.</p>
+                    <div class="hero-stats-mini">
+                        <span><i class="fa-regular fa-star" style="color: #fde047;"></i> Flagship</span>
+                        <span><i class="fa-regular fa-clock" style="color: #60a5fa;"></i> Mới nhất</span>
+                    </div>
+                    <div class="hero-3d-img-label">
+                        <span class="badge-img-label"><i class="fa-solid fa-cubes"></i> 11 thương hiệu</span>
+                    </div>
+                </div>
+                <div class="hero-3d-card" data-index="1">
+                    <div class="card-3d-glow" style="background: radial-gradient(circle, rgba(16,185,129,0.25), transparent);"></div>
+                    <div class="hero-3d-img-wrap">
+                        <i class="fa-solid fa-file-contract hero-theme-icon" style="color: #34d399;"></i>
+                    </div>
+                    <h3 style="color: #34d399;">Chính Sách<br>Minh Bạch</h3>
+                    <p>Bảo hành chính hãng, đổi trả 30 ngày, giao hỏa tốc 2h, trợ giá thu cũ lên tới 2 triệu.</p>
+                    <div class="hero-stats-mini">
+                        <span><i class="fa-solid fa-truck-fast" style="color: #34d399;"></i> Giao nhanh</span>
+                        <span><i class="fa-solid fa-rotate" style="color: #fde047;"></i> 30 ngày</span>
+                    </div>
+                    <div class="hero-3d-img-label">
+                        <span class="badge-img-label" style="background: rgba(16,185,129,0.15); color: #34d399; border-color: rgba(16,185,129,0.3);"><i class="fa-solid fa-check-circle"></i> Cam kết vàng</span>
+                    </div>
+                </div>
+                <div class="hero-3d-card" data-index="2">
+                    <div class="card-3d-glow" style="background: radial-gradient(circle, rgba(139,92,246,0.25), transparent);"></div>
+                    <div class="hero-3d-img-wrap">
+                        <i class="fa-solid fa-shield-halved hero-theme-icon" style="color: #a78bfa;"></i>
+                    </div>
+                    <h3 style="color: #a78bfa;">Bảo Mật<br>Toàn Diện</h3>
+                    <p>Cookie authentication, mã hóa mật khẩu PBKDF2, phân quyền Admin/User, chống CSRF, HTTPS toàn trình.</p>
+                    <div class="hero-stats-mini">
+                        <span><i class="fa-solid fa-lock" style="color: #a78bfa;"></i> Mã hóa</span>
+                        <span><i class="fa-solid fa-user-shield" style="color: #34d399;"></i> RBAC</span>
+                    </div>
+                    <div class="hero-3d-img-label">
+                        <span class="badge-img-label" style="background: rgba(139,92,246,0.15); color: #a78bfa; border-color: rgba(139,92,246,0.3);"><i class="fa-solid fa-shield"></i> An toàn tuyệt đối</span>
+                    </div>
+                </div>
+                <div class="hero-3d-dots" id="hero3dDots">
+                    <button class="dot active" data-index="0"></button>
+                    <button class="dot" data-index="1"></button>
+                    <button class="dot" data-index="2"></button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div class="row g-3 mb-5 text-center">
+        <div class="col-6 col-md-3">
+            <div class="aurora-box aurora-red h-100">
+                <div class="aurora-effect"></div>
+                <div class="mb-2"><i class="fa-solid fa-truck-fast fa-2x"></i></div>
+                <h6>Giao Hỏa Tốc</h6>
+                <small>Nhận hàng siêu tốc trong 2h</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="aurora-box aurora-yellow h-100">
+                <div class="aurora-effect"></div>
+                <div class="mb-2"><i class="fa-solid fa-shield-halved fa-2x"></i></div>
+                <h6>Bảo Hành Dài Hạn</h6>
+                <small>Chính hãng 1 đổi 1 tới 24 tháng</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="aurora-box aurora-blue h-100">
+                <div class="aurora-effect"></div>
+                <div class="mb-2"><i class="fa-solid fa-rotate fa-2x"></i></div>
+                <h6>Đổi Trả 30 Ngày</h6>
+                <small>Yên tâm trải nghiệm không lo lỗi</small>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="aurora-box aurora-green h-100">
+                <div class="aurora-effect"></div>
+                <div class="mb-2"><i class="fa-solid fa-tags fa-2x"></i></div>
+                <h6>Trợ Giá Giờ Vàng</h6>
+                <small>Thu cũ đổi mới hỗ trợ 2 triệu</small>
+            </div>
+        </div>
+    </div>
+
+    <div id="flashsale-section" class="section-flashsale mb-5">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-4 pb-2 border-bottom border-warning-subtle">
+            <div class="d-flex align-items-center flex-wrap gap-3">
+                <h2 class="fw-bold mb-0 text-white" style="font-size: 1.8rem;">
+                    <i class="fa-solid fa-bolt text-warning me-2 animate-pulse"></i>FLASH SALE GIỜ VÀNG
+                </h2>
+                <div class="countdown-wrapper">
+                    <i class="fa-regular fa-clock me-2"></i>
+                    <span id="flashSaleCountdown">00:00:00</span>
+                </div>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn-arrow-custom btn-arrow-flash" id="prevFlashBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="btn-arrow-custom btn-arrow-flash" id="nextFlashBtn"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </div>
+        <div class="row row-cols-2 row-cols-md-5 g-4" id="flashSaleContainer">
+            @foreach (var item in flashSaleProducts)
+            {
+                <div class="col product-item-flash" style="display: none;">
+                    <div class="card h-100 product-card-custom shadow-sm position-relative">
+                        <span class="position-absolute top-0 start-0 badge bg-warning text-dark m-3 px-2.5 py-1.5 shadow-sm fw-bold" style="border-radius: 8px; z-index: 2;">
+                            <i class="fa-solid fa-fire me-1"></i>Giảm Sốc
+                        </span>
+                        <img src="@item.ImageUrl" class="card-img-top img-fluid" alt="@item.Name" style="object-fit: contain; height: 160px; padding: 15px;">
+                        <div class="card-body d-flex flex-column p-3">
+                            <h6 class="card-title fw-bold text-truncate mb-1" title="@item.Name">@item.Name</h6>
+                            <div class="d-flex gap-2 mb-1 small">
+                                            <span class="text-info fw-semibold" style="font-size: 0.7rem;"><i class="fa-solid fa-chart-simple"></i> Đã bán: @ProductController.GetPurchaseCount(item.Id)</span>
+                                            @{
+                                                var flashAvg = ViewBag.AvgRatings?.ContainsKey((int)item.Id) == true ? ViewBag.AvgRatings[(int)item.Id] : 0;
+                                                var flashRevCount = ViewBag.ReviewCounts?.ContainsKey((int)item.Id) == true ? ViewBag.ReviewCounts[(int)item.Id] : 0;
+                                            }
+                                            @if (flashRevCount > 0)
+                                            {
+                                                <span class="text-warning fw-semibold" style="font-size: 0.7rem;"><i class="fa-solid fa-star"></i> @flashAvg</span>
+                                            }
+                            </div>
+                            <p class="card-text text-muted small text-truncate-2 flex-grow-1 mb-3" style="font-size: 0.8rem; line-height: 1.4;">@item.Description</p>
+                            <div class="mt-auto">
+                                <div class="d-flex align-items-center gap-1.5 mb-2 flex-wrap">
+                                    <span class="price-new" style="font-size: 1.15rem;">@(((double)item.FlashPrice).ToString("N0"))đ</span>
+                                    <span class="price-old-crossed">@(((double)item.OriginalPrice).ToString("N0"))đ</span>
+                                </div>
+                                <div class="progress mb-3" style="height: 14px; border-radius: 10px; background-color: #ffedd5;">
+                                    <div class="progress-bar progress-bar-striped progress-bar-animated bg-gradient" role="progressbar" style="width: 75%; background: linear-gradient(90deg, #f97316, #ea580c); border-radius: 10px; font-size: 0.65rem; font-weight: bold;" aria-valuenow="75" aria-valuemin="0" aria-valuemax="100">ĐÃ BÁN 75%</div>
+                                </div>
+                                <a href="/Product/Details/@item.Id" class="btn-view-custom btn-view-flash">Xem Chi Tiết</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <div class="section-new-releases mb-5">
+        <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom border-danger-subtle">
+            <h4 class="fw-bold mb-0 text-white"><i class="fa-solid fa-fire text-danger me-2"></i>Cực Phẩm Mới Ra Mắt</h4>
+            <div class="d-flex gap-2">
+                <button class="btn-arrow-custom btn-arrow-new" id="prevNewBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="btn-arrow-custom btn-arrow-new" id="nextNewBtn"><i class="fa-solid fa-chevron-right"></i></button>
+            </div>
+        </div>
+        <div class="row row-cols-2 row-cols-md-5 g-4" id="newProductsContainer">
+            @foreach (var product in newProducts)
+            {
+                <div class="col product-item-new" style="display: none;">
+                    <div class="card h-100 product-card-custom shadow-sm position-relative">
+                        <span class="position-absolute top-0 start-0 badge bg-danger m-3 px-2.5 py-1.5 shadow-sm fw-bold" style="border-radius: 8px; z-index: 2;">New</span>
+                        <img src="@product.ImageUrl" class="card-img-top img-fluid" alt="@product.Name" style="object-fit: contain; height: 160px; padding: 15px;">
+                        <div class="card-body d-flex flex-column p-3">
+                            <h6 class="card-title fw-bold text-truncate mb-1" title="@product.Name">@product.Name</h6>
+                            <div class="d-flex gap-2 mb-1 small">
+                                            <span class="text-info fw-semibold" style="font-size: 0.7rem;"><i class="fa-solid fa-chart-simple"></i> Đã bán: @ProductController.GetPurchaseCount(product.Id)</span>
+                                            @{
+                                                var newAvg = ViewBag.AvgRatings?.ContainsKey(product.Id) == true ? ViewBag.AvgRatings[product.Id] : 0;
+                                                var newRevCount = ViewBag.ReviewCounts?.ContainsKey(product.Id) == true ? ViewBag.ReviewCounts[product.Id] : 0;
+                                            }
+                                            @if (newRevCount > 0)
+                                            {
+                                                <span class="text-warning fw-semibold" style="font-size: 0.7rem;"><i class="fa-solid fa-star"></i> @newAvg</span>
+                                            }
+                                </div>
+                                <p class="card-text text-muted small text-truncate-2 flex-grow-1 mb-3" style="font-size: 0.8rem; line-height: 1.4;">@product.Description</p>
+                                <div class="mt-auto">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <span class="price-new" style="font-size: 1.15rem;">@product.Price.ToString("N0")đ</span>
+                                    </div>
+                                    <a href="/Product/Details/@product.Id" class="btn-view-custom btn-view-new">Xem Chi Tiết</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div class="section-trending mb-5">
+            <div class="d-flex align-items-center justify-content-between mb-4 pb-2 border-bottom border-success-subtle">
+                <h4 class="fw-bold mb-0 text-white"><i class="fa-solid fa-chart-line text-success me-2"></i>Xu Hướng Bán Chạy</h4>
+                <div class="d-flex gap-2">
+                    <button class="btn-arrow-custom btn-arrow-trending" id="prevTrendBtn"><i class="fa-solid fa-chevron-left"></i></button>
+                    <button class="btn-arrow-custom btn-arrow-trending" id="nextTrendBtn"><i class="fa-solid fa-chevron-right"></i></button>
+                </div>
+            </div>
+            <div class="row row-cols-2 row-cols-md-5 g-4" id="trendingProductsContainer">
+                @foreach (var product in trendingProducts)
+                {
+                    <div class="col product-item-trending" style="display: none;">
+                        <div class="card h-100 product-card-custom shadow-sm position-relative">
+                            <span class="position-absolute top-0 start-0 badge bg-success m-3 px-2.5 py-1.5 shadow-sm fw-bold" style="border-radius: 8px; z-index: 2;">Hot</span>
+                            <img src="@product.ImageUrl" class="card-img-top img-fluid" alt="@product.Name" style="object-fit: contain; height: 160px; padding: 15px;">
+                            <div class="card-body d-flex flex-column p-3">
+                                <h6 class="card-title fw-bold text-truncate mb-1" title="@product.Name">@product.Name</h6>
+                                <div class="d-flex gap-2 mb-1 small">
+                                    <span class="text-info fw-semibold" style="font-size: 0.7rem;"><i class="fa-solid fa-chart-simple"></i> Đã bán: @ProductController.GetPurchaseCount(product.Id)</span>
+                                    @{
+                                        var trendAvg = ViewBag.AvgRatings?.ContainsKey(product.Id) == true ? ViewBag.AvgRatings[product.Id] : 0;
+                                        var trendRevCount = ViewBag.ReviewCounts?.ContainsKey(product.Id) == true ? ViewBag.ReviewCounts[product.Id] : 0;
+                                    }
+                                    @if (trendRevCount > 0)
+                                    {
+                                        <span class="text-warning fw-semibold" style="font-size: 0.7rem;"><i class="fa-solid fa-star"></i> @trendAvg</span>
+                                    }
+                                </div>
+                                <p class="card-text text-muted small text-truncate-2 flex-grow-1 mb-3" style="font-size: 0.8rem; line-height: 1.4;">@product.Description</p>
+                                <div class="mt-auto">
+                                    <div class="d-flex align-items-center mb-3">
+                                        <span class="price-new" style="font-size: 1.15rem;">@product.Price.ToString("N0")đ</span>
+                                    </div>
+                                    <a href="/Product/Details/@product.Id" class="btn-view-custom btn-view-trending">Xem Chi Tiết</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        function setupCarouselLogic(containerId, itemClass, prevBtnId, nextBtnId) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            const items = container.querySelectorAll(`.${itemClass}`);
+            if (items.length === 0) return;
+
+            let currentIndex = 0;
+            const getItemsPerPage = () => window.innerWidth >= 768 ? 5 : 2;
+
+            function updateCarousel() {
+                const itemsPerPage = getItemsPerPage();
+                items.forEach((item, index) => {
+                    if (index >= currentIndex && index < currentIndex + itemsPerPage) {
+                        item.style.display = "block";
+                        item.classList.add("magic-reveal-active");
+                    } else {
+                        item.style.display = "none";
+                        item.classList.remove("magic-reveal-active");
+                    }
+                });
+                const prevBtn = document.getElementById(prevBtnId);
+                const nextBtn = document.getElementById(nextBtnId);
+                if (prevBtn) prevBtn.disabled = currentIndex === 0;
+                if (nextBtn) nextBtn.disabled = currentIndex + itemsPerPage >= items.length;
+            }
+
+            const prevBtn = document.getElementById(prevBtnId);
+            const nextBtn = document.getElementById(nextBtnId);
+
+            if (prevBtn) {
+                prevBtn.addEventListener("click", () => {
+                    if (currentIndex > 0) {
+                        currentIndex -= 1;
+                        updateCarousel();
+                    }
+                });
+            }
+
+            if (nextBtn) {
+                nextBtn.addEventListener("click", () => {
+                    const itemsPerPage = getItemsPerPage();
+                    if (currentIndex + itemsPerPage < items.length) {
+                        currentIndex += 1;
+                        updateCarousel();
+                    }
+                });
+            }
+
+            updateCarousel();
+            window.addEventListener("resize", updateCarousel);
+        }
+
+        setupCarouselLogic("flashSaleContainer", "product-item-flash", "prevFlashBtn", "nextFlashBtn");
+        setupCarouselLogic("newProductsContainer", "product-item-new", "prevNewBtn", "nextNewBtn");
+        setupCarouselLogic("trendingProductsContainer", "product-item-trending", "prevTrendBtn", "nextTrendBtn");
+
+        function startFlashSaleCountdown() {
+            const countdownEl = document.getElementById("flashSaleCountdown");
+            if (!countdownEl) return;
+
+            function refreshClock() {
+                const now = new Date();
+                const endOfToday = new Date();
+                endOfToday.setHours(23, 59, 59, 0);
+
+                let timeDiff = endOfToday - now;
+                if (timeDiff <= 0) {
+                    timeDiff = 3 * 60 * 60 * 1000;
+                }
+
+                const hrs = Math.floor(timeDiff / (1000 * 60 * 60));
+                const mins = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+                const secs = Math.floor((timeDiff % (1000 * 60)) / 1000);
+
+                const hrsStr = hrs.toString().padStart(2, '0');
+                const minsStr = mins.toString().padStart(2, '0');
+                const secsStr = secs.toString().padStart(2, '0');
+
+                countdownEl.innerHTML = `<span class="badge bg-danger px-2 py-1 mx-0.5">${hrsStr}</span>:<span class="badge bg-danger px-2 py-1 mx-0.5">${minsStr}</span>:<span class="badge bg-danger px-2 py-1 mx-0.5">${secsStr}</span>`;
+            }
+
+            refreshClock();
+            setInterval(refreshClock, 1000);
+        }
+        startFlashSaleCountdown();
+
+        // ==== 3D HERO BANNER ====
+        var heroCards = document.querySelectorAll('.hero-3d-card');
+        var heroDots = document.querySelectorAll('.hero-3d-dots .dot');
+        var heroTitle = document.getElementById('heroSlideTitle');
+        var heroDesc = document.getElementById('heroSlideDesc');
+        var showcase = document.getElementById('hero3dShowcase');
+        var content = document.getElementById('hero3dContent');
+        var badgeText = document.getElementById('heroBadgeText');
+        var currentSlide = 0;
+        var slideInterval;
+        var slideData = [
+            { badge: 'KHO SẢN PHẨM 2026', title: 'KHO SẢN PHẨM<br><span class="gradient-text">ĐA DẠNG &amp; CHẤT LƯỢNG</span>', desc: 'Hơn 151 mẫu điện thoại từ các thương hiệu hàng đầu: Apple, Samsung, Xiaomi, OPPO, Sony, Nokia và nhiều hãng khác.' },
+            { badge: 'CHÍNH SÁCH MINH BẠCH', title: 'CHÍNH SÁCH<br><span class="gradient-text-orange">MINH BẠCH &amp; UY TÍN</span>', desc: 'Bảo hành chính hãng 12-24 tháng, đổi trả 30 ngày miễn phí, giao hỏa tốc trong 2h, trợ giá thu cũ lên tới 2 triệu đồng.' },
+            { badge: 'BẢO MẬT TOÀN DIỆN', title: 'BẢO MẬT<br><span class="gradient-text-green">TOÀN DIỆN &amp; AN TOÀN</span>', desc: 'Cookie authentication an toàn, mã hóa mật khẩu PBKDF2, phân quyền Admin/User, chống CSRF, HTTPS toàn trình với chứng chỉ SSL.' }
+        ];
+
+        function goToSlide(index) {
+            if (index === currentSlide) return;
+            heroCards.forEach(function(c, i) {
+                c.classList.toggle('active', i === index);
+            });
+            heroDots.forEach(function(d, i) {
+                d.classList.toggle('active', i === index);
+            });
+            heroTitle.innerHTML = slideData[index].title;
+            heroDesc.textContent = slideData[index].desc;
+            badgeText.textContent = slideData[index].badge;
+            currentSlide = index;
+        }
+
+        function nextSlide() { goToSlide((currentSlide + 1) % heroCards.length); }
+
+        function startAutoSlide() {
+            slideInterval = setInterval(nextSlide, 4200);
+        }
+        function resetAutoSlide() {
+            clearInterval(slideInterval); startAutoSlide();
+        }
+
+        heroDots.forEach(function(dot) {
+            dot.addEventListener('click', function() {
+                goToSlide(parseInt(this.dataset.index));
+                resetAutoSlide();
+            });
+        });
+
+        if (heroCards.length > 0) startAutoSlide();
+
+        // 3D Mouse Parallax Tilt
+        if (showcase) {
+            showcase.addEventListener('mousemove', function(e) {
+                var rect = showcase.getBoundingClientRect();
+                var x = (e.clientX - rect.left) / rect.width - 0.5;
+                var y = (e.clientY - rect.top) / rect.height - 0.5;
+                showcase.style.transform = 'rotateY(' + (x * 12) + 'deg) rotateX(' + (-y * 12) + 'deg) translateZ(10px)';
+                if (content) {
+                    content.style.transform = 'rotateY(' + (x * 6) + 'deg) rotateX(' + (-y * 6) + 'deg) translateZ(5px)';
+                }
+            });
+            showcase.addEventListener('mouseleave', function() {
+                showcase.style.transform = 'rotateY(0deg) rotateX(0deg) translateZ(0)';
+                if (content) content.style.transform = 'rotateY(0deg) rotateX(0deg) translateZ(0)';
+            });
+        }
+
+        // Floating particles
+        var wrapper = document.querySelector('.hero-3d-wrapper');
+        if (wrapper) {
+            var colors = ['rgba(59,130,246,0.3)', 'rgba(139,92,246,0.25)', 'rgba(16,185,129,0.2)', 'rgba(238,9,121,0.2)'];
+            for (var p = 0; p < 20; p++) {
+                var particle = document.createElement('div');
+                particle.className = 'hero-particle';
+                var size = 3 + Math.random() * 7;
+                var color = colors[Math.floor(Math.random() * colors.length)];
+                particle.style.cssText = 'width:' + size + 'px;height:' + size + 'px;background:' + color + ';left:' + (Math.random() * 100) + '%;top:' + (Math.random() * 100) + '%;animation:particleFloat ' + (4 + Math.random() * 6) + 's infinite ' + (Math.random() * 4) + 's ease-in-out;';
+                wrapper.appendChild(particle);
+            }
+        }
+    });
+</script>

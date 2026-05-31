@@ -1,0 +1,194 @@
+@{
+    ViewData["Title"] = "Bảo Mật Hệ Thống";
+}
+
+<style>
+    .sec-wrap {
+        position: relative;
+        overflow: hidden;
+        padding: 30px 0 60px;
+    }
+    .sec-wrap::before {
+        content: '';
+        position: absolute; inset: 0;
+        background: radial-gradient(ellipse at 0% 50%, rgba(59,130,246,0.04), transparent 60%),
+                    radial-gradient(ellipse at 100% 50%, rgba(16,185,129,0.03), transparent 60%);
+        pointer-events: none;
+    }
+    .sec-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; }
+    .sec-card {
+        background: rgba(13,17,28,0.7);
+        border: 1px solid rgba(255,255,255,0.06);
+        border-radius: 16px;
+        padding: 24px;
+        transition: all 0.3s;
+        position: relative;
+        overflow: hidden;
+    }
+    .sec-card:hover { border-color: rgba(59,130,246,0.3); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(0,0,0,0.3); }
+    .sec-card .sec-icon {
+        width: 44px; height: 44px;
+        display: flex; align-items: center; justify-content: center;
+        border-radius: 12px;
+        font-size: 1.2rem;
+        margin-bottom: 14px;
+    }
+    .sec-card h3 { font-size: 1rem; font-weight: 800; color: #fff; margin-bottom: 6px; }
+    .sec-card p { color: #94a3b8; font-size: 0.85rem; line-height: 1.6; margin: 0; }
+    .sec-card .sec-tag {
+        display: inline-block;
+        font-size: 0.65rem;
+        font-weight: 700;
+        padding: 2px 10px;
+        border-radius: 20px;
+        margin-top: 10px;
+        letter-spacing: 0.3px;
+    }
+    .sec-checklist { list-style: none; padding: 0; margin: 0; }
+    .sec-checklist li {
+        display: flex; align-items: flex-start; gap: 10px;
+        padding: 10px 0;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
+        color: #cbd5e1;
+        font-size: 0.88rem;
+    }
+    .sec-checklist li:last-child { border-bottom: none; }
+    .sec-checklist li i { margin-top: 2px; flex-shrink: 0; }
+    .sec-stack {
+        display: flex; flex-wrap: wrap; gap: 8px;
+    }
+    .sec-stack span {
+        background: rgba(59,130,246,0.08);
+        border: 1px solid rgba(59,130,246,0.15);
+        padding: 4px 14px;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #93c5fd;
+    }
+    .sec-status-bar {
+        display: flex; align-items: center; gap: 10px;
+        background: rgba(16,185,129,0.06);
+        border: 1px solid rgba(16,185,129,0.15);
+        border-radius: 12px;
+        padding: 14px 20px;
+        margin-bottom: 28px;
+    }
+    .sec-status-bar .pulse-dot {
+        width: 10px; height: 10px;
+        border-radius: 50%;
+        background: #10b981;
+        box-shadow: 0 0 10px rgba(16,185,129,0.5);
+        animation: pulse-dot 2s infinite;
+    }
+    @@keyframes pulse-dot { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.6;transform:scale(1.2)} }
+    .sec-status-bar span { color: #34d399; font-weight: 700; font-size: 0.85rem; letter-spacing: 0.5px; }
+</style>
+
+<div class="sec-wrap">
+    <div class="container">
+        <div class="text-center mb-4">
+            <div class="sec-status-bar d-inline-flex">
+                <div class="pulse-dot"></div>
+                <span><i class="fa-solid fa-shield-halved me-1-5"></i> HỆ THỐNG ĐANG HOẠT ĐỘNG AN TOÀN</span>
+            </div>
+            <h1 class="fw-bold" style="font-size: 2rem; background: linear-gradient(135deg, #10b981, #3b82f6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+                Bảo Mật Hệ Thống
+            </h1>
+            <p class="text-white-50 mx-auto" style="max-width: 560px; font-size: 0.92rem;">
+                PhoneStore áp dụng các công nghệ bảo mật chuẩn ASP.NET Core để bảo vệ dữ liệu và giao dịch của bạn.
+            </p>
+        </div>
+
+        <div class="sec-grid mb-4">
+            <div class="sec-card">
+                <div class="sec-icon" style="background: rgba(59,130,246,0.12); color: #60a5fa;"><i class="fa-solid fa-lock"></i></div>
+                <h3>Mã Hóa Mật Khẩu</h3>
+                <p>Mật khẩu được băm bằng thuật toán PBKDF2 (PasswordHasher) trước khi lưu vào database. Không lưu trữ plain-text.</p>
+                <span class="sec-tag" style="background: rgba(59,130,246,0.1); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2);">ASP.NET Core Identity</span>
+            </div>
+            <div class="sec-card">
+                <div class="sec-icon" style="background: rgba(16,185,129,0.12); color: #34d399;"><i class="fa-solid fa-cookie-bite"></i></div>
+                <h3>Xác Thực Cookie</h3>
+                <p>Sử dụng cookie authentication an toàn với HttpOnly, SameSite, Expiration sliding. Ticket được mã hóa bởi ASP.NET Core Data Protection.</p>
+                <span class="sec-tag" style="background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid rgba(16,185,129,0.2);">Cookie Authentication</span>
+            </div>
+            <div class="sec-card">
+                <div class="sec-icon" style="background: rgba(239,68,68,0.12); color: #ef4444;"><i class="fa-solid fa-shield-halved"></i></div>
+                <h3>Phân Quyền Truy Cập</h3>
+                <p>Kiến trúc Role-based Access Control (RBAC) phân tách Admin/User. Endpoint Admin được bảo vệ bởi <code>[Authorize(Roles = "Admin")]</code>.</p>
+                <span class="sec-tag" style="background: rgba(239,68,68,0.1); color: #ef4444; border: 1px solid rgba(239,68,68,0.2);">Authorization Filter</span>
+            </div>
+            <div class="sec-card">
+                <div class="sec-icon" style="background: rgba(250,204,21,0.12); color: #fde047;"><i class="fa-solid fa-server"></i></div>
+                <h3>SQL Server &amp; Session</h3>
+                <p>Database SQL Server với Windows Authentication. Session được lưu trên server, chỉ lưu trữ ID trên client. Chống giả mạo session.</p>
+                <span class="sec-tag" style="background: rgba(250,204,21,0.1); color: #fde047; border: 1px solid rgba(250,204,21,0.2);">Distributed Memory Cache</span>
+            </div>
+            <div class="sec-card">
+                <div class="sec-icon" style="background: rgba(168,85,247,0.12); color: #a78bfa;"><i class="fa-solid fa-arrows-rotate"></i></div>
+                <h3>Chống Tấn Công CSRF</h3>
+                <p>Mọi form đều được bảo vệ bởi Anti-Forgery Token do ASP.NET Core tạo tự động, ngăn chặn tấn công Cross-Site Request Forgery.</p>
+                <span class="sec-tag" style="background: rgba(168,85,247,0.1); color: #a78bfa; border: 1px solid rgba(168,85,247,0.2);">AntiForgery Token</span>
+            </div>
+            <div class="sec-card">
+                <div class="sec-icon" style="background: rgba(236,72,153,0.12); color: #f472b6;"><i class="fa-solid fa-sliders"></i></div>
+                <h3>HTTPS &amp; Secure Headers</h3>
+                <p>Toàn bộ ứng dụng chạy qua HTTPS với HSTS (HTTP Strict Transport Security). Cookie được đánh dấu Secure và HttpOnly.</p>
+                <span class="sec-tag" style="background: rgba(236,72,153,0.1); color: #f472b6; border: 1px solid rgba(236,72,153,0.2);">HSTS + HTTPS</span>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-md-7">
+                <div class="sec-card h-100">
+                    <h3 class="d-flex align-items-center gap-2 mb-3" style="font-size: 1.1rem; color: #fff !important;">
+                        <i class="fa-solid fa-list-check" style="color: #10b981;"></i> Các Biện Pháp Bảo Mật Đã Triển Khai
+                    </h3>
+                    <ul class="sec-checklist">
+                        <li><i class="fa-solid fa-check-circle" style="color: #22c55e;"></i> Băm mật khẩu bằng <strong>PBKDF2</strong> với salt ngẫu nhiên (PasswordHasher)</li>
+                        <li><i class="fa-solid fa-check-circle" style="color: #22c55e;"></i> Cookie authentication với <strong>HttpOnly | Secure | SameSite=Strict</strong></li>
+                        <li><i class="fa-solid fa-check-circle" style="color: #22c55e;"></i> Phân quyền <strong>Admin / User</strong> qua Role Claim</li>
+                        <li><i class="fa-solid fa-check-circle" style="color: #22c55e;"></i> Bảo vệ <strong>CSRF</strong> bằng Anti-Forgery Token mặc định</li>
+                        <li><i class="fa-solid fa-check-circle" style="color: #22c55e;"></i> Session chỉ lưu ID trên client, dữ liệu session ở server</li>
+                        <li><i class="fa-solid fa-check-circle" style="color: #22c55e;"></i> Database kết nối qua <strong>Windows Authentication</strong> (Trusted Connection)</li>
+                        <li><i class="fa-solid fa-check-circle" style="color: #22c55e;"></i> Input được validate qua <strong>Model Binding</strong> và Server-side validation</li>
+                        <li><i class="fa-solid fa-check-circle" style="color: #22c55e;"></i> Đường dẫn Admin được <strong>bảo vệ tuyệt đối</strong> — User thường không thể truy cập</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="col-md-5">
+                <div class="sec-card h-100">
+                    <h3 class="d-flex align-items-center gap-2 mb-3" style="font-size: 1.1rem; color: #fff !important;">
+                        <i class="fa-solid fa-layer-group" style="color: #3b82f6;"></i> Công Nghệ Sử Dụng
+                    </h3>
+                    <div class="sec-stack mb-4">
+                        <span>ASP.NET Core 10</span>
+                        <span>C#</span>
+                        <span>Entity Framework Core</span>
+                        <span>SQL Server</span>
+                        <span>Cookie Auth</span>
+                        <span>RBAC</span>
+                        <span>HTTPS</span>
+                        <span>HSTS</span>
+                        <span>Anti-CSRF</span>
+                        <span>Session</span>
+                        <span>PBKDF2</span>
+                        <span>Data Protection</span>
+                    </div>
+                    <p class="text-white-50" style="font-size: 0.82rem; line-height: 1.6;">
+                        PhoneStore được xây dựng trên nền tảng ASP.NET Core với các thư viện bảo mật tích hợp sẵn.
+                        Hệ thống không lưu trữ thông tin nhạy cảm dưới dạng plain-text và áp dụng các biện pháp
+                        phòng chống tấn công web cơ bản theo OWASP.
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-4 pt-2">
+            <p class="text-white-50 m-0" style="font-size: 0.75rem;">
+                <i class="fa-solid fa-circle-info me-1"></i> Bảo mật là ưu tiên hàng đầu. Nếu phát hiện lỗ hổng, vui lòng liên hệ quản trị viên.
+            </p>
+        </div>
+    </div>
+</div>

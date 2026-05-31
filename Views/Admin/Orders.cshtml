@@ -1,0 +1,91 @@
+@model List<PhoneStore.Models.Order>
+@{
+    ViewData["Title"] = "Quản lí đơn hàng";
+    var selectedStatus = ViewBag.SelectedStatus as string;
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="fw-bold" style="font-size: 1.4rem; background: linear-gradient(135deg, #ff6a00, #ee0979); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+            <i class="fa-solid fa-truck me-2"></i>Đơn hàng
+        </h1>
+        <p class="text-white-50 m-0" style="font-size: 0.82rem;">Quản lí tất cả đơn hàng trong hệ thống</p>
+    </div>
+    <span class="badge" style="background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.2);padding:6px 14px;border-radius:8px;font-size:0.78rem;">
+        <i class="fa-solid fa-box me-1"></i> @Model.Count đơn hàng
+    </span>
+</div>
+
+<form method="get" action="@Url.Action("Orders")" class="mb-3">
+    <div class="d-flex gap-2 align-items-center flex-wrap">
+        <a href="@Url.Action("Orders")" class="btn btn-sm @(string.IsNullOrEmpty(selectedStatus) ? "btn-warning" : "btn-outline-secondary") fw-bold rounded-3" style="font-size:0.82rem;">
+            Tất cả
+        </a>
+        @if (ViewBag.Statuses is List<string> statuses)
+        {
+            foreach (var s in statuses)
+            {
+                <a href="@Url.Action("Orders", new { status = s })"
+                   class="btn btn-sm @(selectedStatus == s ? "btn-warning" : "btn-outline-secondary") fw-bold rounded-3"
+                   style="font-size:0.82rem;">
+                    @s
+                </a>
+            }
+        }
+    </div>
+</form>
+
+<div style="overflow-x: auto; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+    <table class="table table-dark table-hover m-0" style="background: #0a0e18; font-size: 0.82rem; min-width: 1000px;">
+        <thead>
+            <tr style="background: rgba(255,106,0,0.08); border-bottom: 2px solid rgba(255,106,0,0.2);">
+                <th class="py-3 px-3" style="color: #ff6a00;">Mã ĐH</th>
+                <th class="py-3" style="color: #ff6a00;">Khách hàng</th>
+                <th class="py-3" style="color: #ff6a00;">SĐT</th>
+                <th class="py-3" style="color: #ff6a00;">Tổng tiền</th>
+                <th class="py-3" style="color: #ff6a00;">Thanh toán</th>
+                <th class="py-3" style="color: #ff6a00;">Trạng thái</th>
+                <th class="py-3" style="color: #ff6a00;">Ngày đặt</th>
+                <th class="py-3 text-end px-3" style="color: #ff6a00;">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var o in Model)
+            {
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle;">
+                    <td class="px-3 py-3 fw-bold text-white">#@o.Id</td>
+                    <td class="py-3">@o.CustomerName</td>
+                    <td class="py-3" style="color: #94a3b8;">@o.Phone</td>
+                    <td class="py-3" style="color: #ff6a00; font-weight: 700;">@o.TotalAmount.ToString("N0")đ</td>
+                    <td class="py-3" style="color: #94a3b8; font-size:0.78rem;">@o.PaymentMethodLabel</td>
+                    <td class="py-3">
+                        @{
+                            var badge = o.Status switch
+                            {
+                                "Chờ xác nhận" => "background:rgba(255,193,7,0.12);color:#facc15;border:1px solid rgba(255,193,7,0.2);",
+                                "Đang xử lý" => "background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.2);",
+                                "Đang giao" => "background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.2);",
+                                "Đã giao" => "background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.2);",
+                                "Đã hủy" => "background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.2);",
+                                _ => "background:rgba(255,255,255,0.06);color:#94a3b8;border:1px solid rgba(255,255,255,0.1);"
+                            };
+                        }
+                        <span class="badge" style="@badge padding:4px 10px;border-radius:8px;font-size:0.72rem;font-weight:700;">@o.Status</span>
+                    </td>
+                    <td class="py-3" style="color: #94a3b8;">@o.OrderDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</td>
+                    <td class="py-3 text-end px-3">
+                        <a href="@Url.Action("OrderDetail", new { id = o.Id })" class="btn btn-sm" style="background:rgba(59,130,246,0.1);color:#60a5fa;border:1px solid rgba(59,130,246,0.2);border-radius:8px;padding:4px 12px;font-size:0.75rem;">
+                            <i class="fa-solid fa-eye me-1"></i>Chi tiết
+                        </a>
+                    </td>
+                </tr>
+            }
+            @if (Model.Count == 0)
+            {
+                <tr>
+                    <td colspan="8" class="text-center py-5 text-white-50">Chưa có đơn hàng nào</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>

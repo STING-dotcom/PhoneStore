@@ -1,0 +1,55 @@
+@{
+    ViewData["Title"] = "Quản Lí";
+    Layout = "_Layout";
+}
+
+<style>
+    .admin-stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-bottom: 30px; }
+    .admin-stat-card { background: linear-gradient(145deg, #0d111c, #0a0e18); border: 1px solid rgba(255,106,0,0.15); border-radius: 16px; padding: 24px; transition: all 0.3s; }
+    .admin-stat-card:hover { border-color: #ff6a00; transform: translateY(-4px); box-shadow: 0 12px 40px rgba(255,106,0,0.1); }
+    .admin-stat-card .stat-icon { font-size: 2rem; margin-bottom: 12px; }
+    .admin-stat-card .stat-value { font-size: 2rem; font-weight: 900; color: #fff; }
+    .admin-stat-card .stat-label { color: #64748b; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; }
+    .admin-quick-links { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+    .admin-quick-link { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border-radius: 12px; background: rgba(15,23,42,0.6); border: 1px solid rgba(255,255,255,0.06); text-decoration: none; transition: all 0.3s; }
+    .admin-quick-link:hover { border-color: #ff6a00; background: rgba(255,106,0,0.06); transform: translateY(-2px); }
+    .admin-quick-link i { font-size: 1.4rem; width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; border-radius: 10px; }
+    .admin-quick-link span { color: #f1f5f9; font-weight: 700; font-size: 0.9rem; }
+</style>
+
+<div class="mb-4">
+    <h1 class="fw-bold" style="font-size: 1.6rem; background: linear-gradient(135deg, #ff6a00, #ee0979); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+        <i class="fa-solid fa-gauge-high me-2"></i>Dashboard
+    </h1>
+    <p class="text-white-50" style="font-size: 0.88rem;">Tổng quan hệ thống PhoneStore</p>
+</div>
+
+<div class="admin-stats-grid">
+    <div class="admin-stat-card">
+        <div class="stat-icon" style="color: #ff6a00;"><i class="fa-solid fa-mobile-screen-button"></i></div>
+        <div class="stat-value">@ViewBag.TotalProducts</div>
+        <div class="stat-label">Sản phẩm</div>
+    </div>
+    <div class="admin-stat-card">
+        <div class="stat-icon" style="color: #22c55e;"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-value">@ViewBag.TotalUsers</div>
+        <div class="stat-label">Người dùng</div>
+    </div>
+    <div class="admin-stat-card">
+        <div class="stat-icon" style="color: #fde047;"><i class="fa-solid fa-coins"></i></div>
+        <div class="stat-value">@ViewBag.TotalRevenue.ToString("N0")đ</div>
+        <div class="stat-label">Tổng giá trị SP</div>
+    </div>
+</div>
+
+<h5 class="fw-bold text-white mb-3" style="font-size: 1rem;"><i class="fa-solid fa-bolt me-2" style="color: #ff6a00;"></i>Quản lý nhanh</h5>
+<div class="admin-quick-links">
+    <a asp-action="Products" class="admin-quick-link">
+        <i style="background: rgba(255,106,0,0.12); color: #ff6a00;" class="fa-solid fa-boxes-stacked"></i>
+        <span>Sản phẩm</span>
+    </a>
+    <a asp-action="Users" class="admin-quick-link">
+        <i style="background: rgba(34,197,94,0.12); color: #22c55e;" class="fa-solid fa-user-gear"></i>
+        <span>Người dùng</span>
+    </a>
+</div>

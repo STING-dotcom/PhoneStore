@@ -1,0 +1,102 @@
+@using PhoneStore.Models
+@model List<Product>
+@{
+    ViewData["Title"] = "Quản lý Sản phẩm";
+    Layout = "_Layout";
+    var searchTerm = Context.Request.Query["search"].ToString();
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+    <div>
+        <h1 class="fw-bold" style="font-size: 1.4rem; background: linear-gradient(135deg, #ff6a00, #ee0979); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;">
+            <i class="fa-solid fa-boxes-stacked me-2"></i>Sản phẩm
+        </h1>
+        <p class="text-white-50 m-0" style="font-size: 0.82rem;">Quản lý danh sách sản phẩm — @Model.Count sản phẩm</p>
+    </div>
+    <a asp-action="ProductCreate" class="btn text-white fw-bold px-4" style="background: linear-gradient(135deg, #ff6a00, #ee0979); border: none; border-radius: 10px; padding: 10px 20px;">
+        <i class="fa-solid fa-plus me-1"></i> Thêm SP
+    </a>
+</div>
+<!-- Search -->
+<form method="get" action="@Url.Action("Products")" class="mb-3">
+    <div class="input-group">
+        <input type="text" name="search" class="form-control" value="@searchTerm"
+               placeholder="Tìm kiếm sản phẩm theo tên, hãng..." autocomplete="off"
+               style="background: rgba(15,23,42,0.8); border: 1px solid rgba(255,106,0,0.3); color: #f1f5f9; border-radius: 10px 0 0 10px; padding: 10px 14px;" />
+        <button type="submit" class="btn" style="background: linear-gradient(135deg, #ff6a00, #ee0979); color: #fff; font-weight: 700; border-radius: 0 10px 10px 0; padding: 0 20px; border: none;">
+            <i class="fa-solid fa-magnifying-glass me-1"></i> Tra
+        </button>
+        @if (!string.IsNullOrEmpty(searchTerm))
+        {
+            <a href="@Url.Action("Products")" class="btn" style="background: rgba(239,68,68,0.15); color: #ef4444; border-radius: 10px; padding: 0 14px; border: none; margin-left: 6px; font-weight: 700; font-size: 0.82rem;">
+                <i class="fa-solid fa-xmark"></i> Xoá
+            </a>
+        }
+    </div>
+</form>
+
+<div style="overflow-x: auto; border-radius: 14px; border: 1px solid rgba(255,255,255,0.06);">
+    <table class="table table-dark table-hover m-0" style="background: #0a0e18; font-size: 0.82rem; min-width: 900px;">
+        <thead>
+            <tr style="background: rgba(255,106,0,0.08); border-bottom: 2px solid rgba(255,106,0,0.2);">
+                <th class="py-3 px-3" style="color: #ff6a00;">ID</th>
+                <th class="py-3" style="color: #ff6a00;">Tên SP</th>
+                <th class="py-3" style="color: #ff6a00;">Hãng</th>
+                <th class="py-3" style="color: #ff6a00;">Giá</th>
+                <th class="py-3" style="color: #ff6a00;">New</th>
+                <th class="py-3" style="color: #ff6a00;">Best</th>
+                <th class="py-3 text-end px-3" style="color: #ff6a00;">Hành động</th>
+            </tr>
+        </thead>
+        <tbody>
+            @if (Model.Count == 0)
+            {
+                <tr>
+                    <td colspan="7" class="text-center py-5" style="color: #64748b;">
+                        <i class="fa-solid fa-box-open mb-2" style="font-size: 2rem; display: block;"></i>
+                        Không tìm thấy sản phẩm nào
+                    </td>
+                </tr>
+            }
+            @foreach (var p in Model)
+            {
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle;">
+                    <td class="px-3 py-3" style="color: #64748b;">#@p.Id</td>
+                    <td class="py-3" style="max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="@p.Name">@p.Name</td>
+                    <td class="py-3">@p.Brand</td>
+                    <td class="py-3" style="color: #fde047; font-weight: 700;">@p.Price.ToString("N0")đ</td>
+                    <td class="py-3">@if(p.IsNew){<i class="fa-solid fa-check" style="color:#22c55e;"></i>}else{<i class="fa-solid fa-xmark" style="color:#ef4444;"></i>}</td>
+                    <td class="py-3">@if(p.IsBestSeller){<i class="fa-solid fa-check" style="color:#22c55e;"></i>}else{<i class="fa-solid fa-xmark" style="color:#ef4444;"></i>}</td>
+                    <td class="py-3 text-end px-3">
+                        <a asp-action="ProductEdit" asp-route-id="@p.Id" class="btn btn-sm me-1" style="background: rgba(59,130,246,0.15); color: #60a5fa; border-radius: 8px; border: none; padding: 5px 12px;">
+                            <i class="fa-solid fa-pen"></i>
+                        </a>
+                        <form asp-action="ProductDelete" asp-route-id="@p.Id" method="post" style="display:inline;" onsubmit="return confirm('Xóa sản phẩm @p.Name?')">
+                            <button type="submit" class="btn btn-sm" style="background: rgba(239,68,68,0.15); color: #ef4444; border-radius: 8px; border: none; padding: 5px 12px;">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+</div>
+
+@{
+    var page = (int)ViewBag.Page;
+    var totalPages = (int)ViewBag.TotalPages;
+}
+@if (totalPages > 1)
+{
+    <nav class="mt-4 d-flex justify-content-center">
+        <ul class="pagination pagination-sm m-0">
+            @for (int i = 1; i <= totalPages; i++)
+            {
+                <li class="page-item @(i == page ? "active" : "")">
+                    <a asp-action="Products" asp-route-page="@i" asp-route-search="@searchTerm" class="page-link" style="background: @(i == page ? "linear-gradient(135deg, #ff6a00, #ee0979)" : "rgba(15,23,42,0.6)"); border: 1px solid rgba(255,255,255,0.06); color: #fff; border-radius: 8px; margin: 0 3px; padding: 6px 14px;">@i</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

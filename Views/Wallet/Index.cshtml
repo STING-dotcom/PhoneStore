@@ -1,0 +1,146 @@
+@{
+    ViewData["Title"] = "Ví PhoneStore";
+    var balance = ViewBag.Balance as decimal? ?? 0m;
+    var txs = ViewBag.Transactions as List<PhoneStore.Models.WalletTransaction> ?? new();
+}
+
+<style>
+    .wallet-card {
+        background: rgba(13, 18, 30, 0.45);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 35px;
+        margin-top: 20px;
+        margin-bottom: 50px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+    .wallet-balance-box {
+        background: linear-gradient(145deg, rgba(255, 106, 0, 0.08), rgba(238, 9, 121, 0.08));
+        border: 1px solid rgba(255, 106, 0, 0.25);
+        border-radius: 20px;
+        padding: 30px;
+        text-align: center;
+    }
+    .wallet-balance-box .balance-label {
+        color: #94a3b8;
+        font-weight: 600;
+        font-size: 0.85rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .wallet-balance-box .balance-amount {
+        background: linear-gradient(135deg, #ff6a00, #ee0979);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 3rem;
+        font-weight: 900;
+        line-height: 1.2;
+    }
+    .wallet-balance-box .balance-amount-zero {
+        color: #64748b;
+        font-size: 3rem;
+        font-weight: 900;
+        line-height: 1.2;
+    }
+    .btn-topup {
+        background: linear-gradient(135deg, #11998e, #38ef7d);
+        color: #ffffff;
+        border: none;
+        padding: 14px 36px;
+        border-radius: 14px;
+        font-weight: 800;
+        font-size: 1rem;
+        text-decoration: none;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+    .btn-topup:hover {
+        filter: brightness(1.1);
+        box-shadow: 0 8px 30px rgba(56, 239, 125, 0.4);
+        transform: translateY(-2px);
+        color: #ffffff;
+    }
+    .tx-table th {
+        color: #ff6a00;
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        border-bottom: 2px solid rgba(255, 106, 0, 0.3);
+    }
+    .tx-table td {
+        vertical-align: middle;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        color: #f1f5f9;
+        font-size: 0.9rem;
+    }
+    .tx-amount-pos { color: #34d399; font-weight: 700; }
+    .tx-amount-neg { color: #ef4444; font-weight: 700; }
+</style>
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted fw-bold">Trang Chủ</a></li>
+            <li class="breadcrumb-item active text-white fw-bold" aria-current="page">Ví PhoneStore</li>
+        </ol>
+    </nav>
+
+    <div class="wallet-card">
+        <div class="row g-4">
+            <div class="col-lg-5">
+                <div class="wallet-balance-box">
+                    <div class="balance-label mb-2"><i class="fa-solid fa-wallet me-2" style="color: #ff6a00;"></i>Số dư khả dụng</div>
+                    <div class="@(balance > 0 ? "balance-amount" : "balance-amount-zero") mb-3">
+                        @balance.ToString("N0")<span style="font-size: 1.2rem;">đ</span>
+                    </div>
+                    <a href="/Wallet/TopUp" class="btn-topup"><i class="fa-solid fa-plus-circle me-2"></i>Nạp Tiền</a>
+                </div>
+                <div class="mt-3" style="color: #64748b; font-size: 0.8rem; text-align: center;">
+                    <i class="fa-solid fa-shield-halved me-1" style="color: #22c55e;"></i>Giao dịch được bảo mật tuyệt đối
+                </div>
+            </div>
+            <div class="col-lg-7">
+                <h5 class="fw-bold text-white mb-3"><i class="fa-regular fa-clock me-2" style="color: #ff6a00;"></i>Lịch Sử Giao Dịch</h5>
+                @if (txs.Count == 0)
+                {
+                    <div class="text-center py-5">
+                        <i class="fa-solid fa-receipt" style="font-size: 2.5rem; color: rgba(255,255,255,0.06); margin-bottom: 12px; display: block;"></i>
+                        <p class="text-muted mb-0">Chưa có giao dịch nào.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table tx-table mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Thời gian</th>
+                                    <th>Loại</th>
+                                    <th>Phương thức</th>
+                                    <th>Số tiền</th>
+                                    <th>Số dư</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var tx in txs)
+                                {
+                                    <tr>
+                                        <td style="font-size: 0.8rem;">@tx.CreatedAt.ToString("dd/MM HH:mm")</td>
+                                        <td>@tx.Type</td>
+                                        <td style="font-size: 0.85rem;">@tx.Method</td>
+                                        <td class="@(tx.Amount > 0 ? "tx-amount-pos" : "tx-amount-neg")">
+                                            @(tx.Amount > 0 ? "+" : "")@tx.Amount.ToString("N0")đ
+                                        </td>
+                                        <td>@tx.BalanceAfter.ToString("N0")đ</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

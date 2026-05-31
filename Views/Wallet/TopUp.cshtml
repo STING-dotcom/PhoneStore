@@ -1,0 +1,245 @@
+@{
+    ViewData["Title"] = "Nạp Tiền Vào Ví";
+    var balance = ViewBag.Balance as decimal? ?? 0m;
+}
+
+<style>
+    .topup-wrapper {
+        background: rgba(13, 18, 30, 0.45);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 35px;
+        margin-top: 20px;
+        margin-bottom: 50px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+    .method-card {
+        background: rgba(255, 255, 255, 0.02);
+        border: 2px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        padding: 18px 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+    }
+    .method-card:hover {
+        border-color: rgba(255, 106, 0, 0.3);
+        background: rgba(255, 106, 0, 0.05);
+    }
+    .method-card.selected {
+        border-color: #ff6a00;
+        background: rgba(255, 106, 0, 0.08);
+        box-shadow: 0 0 20px rgba(255, 106, 0, 0.15);
+    }
+    .method-card .method-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    .method-card .method-name {
+        color: #f1f5f9;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+    .method-card .method-desc {
+        color: #64748b;
+        font-size: 0.8rem;
+    }
+    .amount-chip {
+        background: rgba(255, 255, 255, 0.03);
+        border: 2px solid rgba(255, 255, 255, 0.08);
+        border-radius: 12px;
+        padding: 14px 20px;
+        cursor: pointer;
+        transition: all 0.3s;
+        text-align: center;
+        font-weight: 800;
+        color: #f1f5f9;
+        font-size: 1rem;
+    }
+    .amount-chip:hover {
+        border-color: rgba(255, 106, 0, 0.3);
+        background: rgba(255, 106, 0, 0.05);
+    }
+    .amount-chip.selected {
+        border-color: #ff6a00;
+        background: rgba(255, 106, 0, 0.1);
+        box-shadow: 0 0 15px rgba(255, 106, 0, 0.1);
+    }
+    .current-balance-label {
+        color: #94a3b8;
+        font-size: 0.85rem;
+    }
+    .current-balance-value {
+        font-weight: 800;
+        background: linear-gradient(135deg, #ff6a00, #ee0979);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .btn-deposit {
+        background: linear-gradient(135deg, #11998e, #38ef7d);
+        color: #ffffff;
+        border: none;
+        padding: 16px 40px;
+        border-radius: 14px;
+        font-weight: 800;
+        font-size: 1.05rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        transition: all 0.3s;
+        width: 100%;
+    }
+    .btn-deposit:hover {
+        filter: brightness(1.1);
+        box-shadow: 0 8px 30px rgba(56, 239, 125, 0.4);
+        transform: translateY(-2px);
+        color: #ffffff;
+    }
+</style>
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted fw-bold">Trang Chủ</a></li>
+            <li class="breadcrumb-item"><a href="/Wallet" class="text-decoration-none text-muted fw-bold">Ví</a></li>
+            <li class="breadcrumb-item active text-white fw-bold" aria-current="page">Nạp Tiền</li>
+        </ol>
+    </nav>
+
+    <div class="topup-wrapper">
+        <div class="text-center mb-4">
+            <h3 class="fw-bold text-white"><i class="fa-solid fa-circle-plus me-2" style="color: #22c55e;"></i>Nạp Tiền Vào Ví</h3>
+            <div class="current-balance-label mt-2">
+                Số dư hiện tại: <span class="current-balance-value">@balance.ToString("N0")đ</span>
+            </div>
+        </div>
+
+        <form asp-action="Deposit" method="post" id="topupForm">
+            <h5 class="fw-bold text-white mb-3" style="font-size: 0.95rem;">
+                <i class="fa-solid fa-building-columns me-2" style="color: #ff6a00;"></i>Chọn phương thức nạp tiền
+            </h5>
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="method-card" data-method="Thẻ cào điện thoại" onclick="selectMethod(this)">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="method-icon" style="background: rgba(239, 68, 68, 0.12); color: #ef4444;">
+                                <i class="fa-solid fa-sim-card"></i>
+                            </div>
+                            <div>
+                                <div class="method-name">Thẻ Cào Điện Thoại</div>
+                                <div class="method-desc">Viettel, Mobifone, Vinaphone</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="method-card" data-method="Chuyển khoản ngân hàng" onclick="selectMethod(this)">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="method-icon" style="background: rgba(59, 130, 246, 0.12); color: #3b82f6;">
+                                <i class="fa-solid fa-university"></i>
+                            </div>
+                            <div>
+                                <div class="method-name">Chuyển Khoản Ngân Hàng</div>
+                                <div class="method-desc">Vietcombank, Techcombank, MB Bank</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="method-card" data-method="Ví MoMo" onclick="selectMethod(this)">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="method-icon" style="background: rgba(168, 85, 247, 0.12); color: #a855f7;">
+                                <i class="fa-solid fa-qrcode"></i>
+                            </div>
+                            <div>
+                                <div class="method-name">Ví MoMo</div>
+                                <div class="method-desc">Quét mã QR thanh toán nhanh</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="method-card" data-method="VNPAY" onclick="selectMethod(this)">
+                        <div class="d-flex align-items-center gap-3">
+                            <div class="method-icon" style="background: rgba(16, 185, 129, 0.12); color: #10b981;">
+                                <i class="fa-solid fa-credit-card"></i>
+                            </div>
+                            <div>
+                                <div class="method-name">VNPAY</div>
+                                <div class="method-desc">Thanh toán qua cổng VNPAY</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <input type="hidden" name="method" id="selectedMethod" value="" required />
+
+            <h5 class="fw-bold text-white mb-3" style="font-size: 0.95rem;">
+                <i class="fa-solid fa-coins me-2" style="color: #f59e0b;"></i>Chọn số tiền (tối thiểu 20.000đ)
+            </h5>
+            <div class="row g-3 mb-4">
+                @foreach (var amt in new[] { 20000, 50000, 100000, 200000, 500000, 1000000 })
+                {
+                    <div class="col-4 col-md-2">
+                        <div class="amount-chip" data-amount="@amt" onclick="selectAmount(this, @amt)">
+                            @amt.ToString("N0")đ
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <div class="mb-4">
+                <label class="form-label-cyber" style="color: #94a3b8; font-weight: 600; font-size: 0.85rem;">
+                    <i class="fa-solid fa-pen me-1 text-warning"></i> Hoặc nhập số tiền khác
+                </label>
+                <div class="input-group">
+                    <input type="number" name="amount" id="customAmount" class="form-control form-control-cyber" placeholder="20,000" min="20000" step="1000" oninput="clearChips()" />
+                    <span class="input-group-text" style="background: rgba(7,10,18,0.6); border: 1px solid rgba(255,255,255,0.15); color: #94a3b8; font-weight: 700; border-radius: 0 10px 10px 0;">VND</span>
+                </div>
+                <small class="text-muted" style="font-size: 0.75rem;"><i class="fa-regular fa-circle-info me-1"></i>Số tiền phải là bội số của 1.000đ và tối thiểu 20.000đ</small>
+            </div>
+
+            <button type="submit" class="btn-deposit" id="depositBtn" disabled>
+                <i class="fa-solid fa-circle-check me-2"></i>Xác Nhận Nạp Tiền
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+    var selectedMethod = null;
+    var selectedAmount = null;
+
+    function selectMethod(el) {
+        document.querySelectorAll('.method-card').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedMethod = el.dataset.method;
+        document.getElementById('selectedMethod').value = selectedMethod;
+        checkForm();
+    }
+
+    function selectAmount(el, amt) {
+        document.querySelectorAll('.amount-chip').forEach(c => c.classList.remove('selected'));
+        el.classList.add('selected');
+        selectedAmount = amt;
+        document.getElementById('customAmount').value = '';
+        checkForm();
+    }
+
+    function clearChips() {
+        document.querySelectorAll('.amount-chip').forEach(c => c.classList.remove('selected'));
+        selectedAmount = null;
+        checkForm();
+    }
+
+    function checkForm() {
+        var customAmt = document.getElementById('customAmount').value;
+        var ok = selectedMethod !== null && (selectedAmount !== null || (customAmt && parseFloat(customAmt) >= 20000));
+        document.getElementById('depositBtn').disabled = !ok;
+    }
+</script>

@@ -1,0 +1,400 @@
+@model PhoneStore.Models.Product
+@{
+    var product = Model as PhoneStore.Models.Product;
+    var specs = ViewBag.Specs as PhoneStore.Models.ProductSpecs;
+    var reviews = ViewBag.Reviews as List<PhoneStore.Models.Review> ?? new();
+    var avgRating = (double)(ViewBag.AvgRating ?? 0);
+    var reviewCount = (int)(ViewBag.ReviewCount ?? 0);
+    var avatars = ViewBag.ReviewerAvatars as Dictionary<int, string?> ?? new();
+    var related = ViewBag.RelatedProducts as List<PhoneStore.Models.Product> ?? new();
+    var purchaseCount = PhoneStore.Controllers.ProductController.GetPurchaseCount(product?.Id ?? 0);
+}
+
+<style>
+    @@keyframes fadeSlideUp { from{opacity:0;transform:translateY(30px)} to{opacity:1;transform:translateY(0)} }
+    @@keyframes fadeSlideLeft { from{opacity:0;transform:translateX(-30px)} to{opacity:1;transform:translateX(0)} }
+    @@keyframes fadeSlideRight { from{opacity:0;transform:translateX(30px)} to{opacity:1;transform:translateX(0)} }
+    @@keyframes scaleIn { from{opacity:0;transform:scale(0.9)} to{opacity:1;transform:scale(1)} }
+    @@keyframes shimmer { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+    @@keyframes float-y { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    @@keyframes pulse-glow { 0%,100%{box-shadow:0 0 5px rgba(255,106,0,0.3)} 50%{box-shadow:0 0 20px rgba(255,106,0,0.6)} }
+    .anim-fade-up { animation: fadeSlideUp 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+    .anim-fade-left { animation: fadeSlideLeft 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+    .anim-fade-right { animation: fadeSlideRight 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+    .anim-scale-in { animation: scaleIn 0.5s cubic-bezier(0.22,1,0.36,1) both; }
+    .anim-delay-1 { animation-delay: 0.1s; }
+    .anim-delay-2 { animation-delay: 0.2s; }
+    .anim-delay-3 { animation-delay: 0.3s; }
+    .anim-delay-4 { animation-delay: 0.4s; }
+    .anim-delay-5 { animation-delay: 0.5s; }
+    .hover-lift { transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s; }
+    .hover-lift:hover { transform: translateY(-6px); box-shadow: 0 16px 40px rgba(0,0,0,0.3); }
+
+    .details-wrapper {
+        background: rgba(13, 18, 30, 0.45);
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 40px;
+        margin-top: 20px;
+        margin-bottom: 50px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+    .product-image-container {
+        background: #ffffff;
+        border: 2px solid rgba(255, 106, 0, 0.3);
+        border-radius: 20px;
+        padding: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 480px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        position: sticky;
+        top: 20px;
+        transition: border-color 0.3s, transform 0.4s;
+        animation: float-y 5s ease-in-out infinite;
+    }
+    .product-image-container:hover { border-color: #ee0979; }
+    .product-image-large {
+        max-width: 100%;
+        max-height: 400px;
+        object-fit: contain;
+        transition: transform 0.4s ease;
+    }
+    .product-image-container:hover .product-image-large { transform: scale(1.06); }
+
+    .tech-badge-brand {
+        background: linear-gradient(135deg, #ff6a00, #ee0979);
+        color: #ffffff;
+        font-weight: 800;
+        padding: 6px 16px;
+        border-radius: 8px;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        display: inline-block;
+        animation: pulse-glow 2s infinite;
+    }
+    .details-product-title {
+        color: #ffffff;
+        font-weight: 800;
+        font-size: 2.2rem;
+        line-height: 1.3;
+    }
+    .details-price-tag {
+        font-size: 2rem;
+        font-weight: 800;
+        color: #ff0844;
+        text-shadow: 0 0 15px rgba(255, 8, 68, 0.2);
+    }
+    .specs-grid-box {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 14px;
+        padding: 16px;
+    }
+    .spec-item {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding: 8px 0;
+        color: #f1f5f9;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .spec-item:last-child { border-bottom: none; }
+    .spec-item i { width: 18px; color: #60a5fa; flex-shrink: 0; }
+    .spec-label { color: #94a3b8; font-weight: 500; width: 100px; flex-shrink: 0; }
+    .spec-value { color: #ffffff; font-weight: 700; }
+
+    .btn-action-base {
+        padding: 14px 28px;
+        font-size: 1rem;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        border-radius: 12px;
+        transition: all 0.3s cubic-bezier(0.2, 1, 0.2, 1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+    .btn-add-to-cart {
+        background: transparent;
+        color: #ff6a00;
+        border: 2px solid #ff6a00;
+    }
+    .btn-add-to-cart:hover {
+        background: rgba(255, 106, 0, 0.1);
+        box-shadow: 0 0 15px rgba(255, 106, 0, 0.3);
+        transform: translateY(-2px);
+    }
+    .btn-buy-now {
+        background: linear-gradient(135deg, #ff6a00, #ee0979);
+        color: #ffffff;
+        border: none;
+        box-shadow: 0 4px 20px rgba(238, 9, 121, 0.4);
+    }
+    .btn-buy-now:hover {
+        filter: brightness(1.1);
+        box-shadow: 0 6px 25px rgba(238, 9, 121, 0.6);
+        transform: translateY(-2px);
+    }
+    .review-section-box {
+        background: rgba(17, 24, 39, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 18px;
+        padding: 30px;
+        margin-top: 40px;
+    }
+    .star-rating-selector {
+        display: inline-flex;
+        flex-direction: row-reverse;
+        gap: 6px;
+    }
+    .star-rating-selector input { display: none; }
+    .star-rating-selector label {
+        font-size: 2rem;
+        color: #475569;
+        cursor: pointer;
+        transition: color 0.2s ease, transform 0.2s, text-shadow 0.2s;
+    }
+    .star-rating-selector label:hover,
+    .star-rating-selector label:hover ~ label,
+    .star-rating-selector input:checked ~ label {
+        color: #fbbf24;
+        text-shadow: 0 0 12px rgba(251, 191, 36, 0.7), 0 0 25px rgba(251, 191, 36, 0.3);
+        transform: scale(1.2);
+    }
+    .review-textarea {
+        background: rgba(7, 10, 18, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.15);
+        color: #ffffff;
+        border-radius: 12px;
+        padding: 15px;
+        transition: border-color 0.3s;
+    }
+    .review-textarea:focus {
+        border-color: #ff6a00;
+        box-shadow: 0 0 10px rgba(255, 106, 0, 0.2);
+        outline: none;
+    }
+    .related-card {
+        background: rgba(13, 17, 28, 0.6);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        padding: 16px;
+        text-align: center;
+        text-decoration: none;
+        transition: all 0.3s;
+    }
+    .related-card:hover {
+        border-color: #ff6a00;
+        transform: translateY(-5px);
+        box-shadow: 0 12px 30px rgba(255,106,0,0.12);
+    }
+    .related-card .thumb {
+        width: 100%; height: 120px;
+        background: #fff;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        padding: 10px;
+        margin-bottom: 10px;
+    }
+    .related-card .thumb img { max-width: 100%; max-height: 100%; object-fit: contain; }
+    .related-card .r-name { color: #f1f5f9; font-weight: 700; font-size: 0.8rem; }
+    .related-card .r-price { color: #fde047; font-weight: 800; font-size: 0.85rem; }
+</style>
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4 anim-fade-up">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted fw-bold">Trang Chủ</a></li>
+            <li class="breadcrumb-item"><a href="/Product" class="text-decoration-none text-muted fw-bold">Sản Phẩm</a></li>
+            <li class="breadcrumb-item active text-white fw-bold" aria-current="page">@product?.Name</li>
+        </ol>
+    </nav>
+
+    <div class="details-wrapper">
+        <div class="row g-5">
+            <div class="col-lg-5 anim-fade-left">
+                <div class="product-image-container">
+                    <img src="@(product?.ImageUrl ?? "")" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1312/1312812.png'" class="product-image-large img-fluid" alt="@product?.Name" />
+                </div>
+            </div>
+
+            <div class="col-lg-7 d-flex flex-column">
+                <div>
+                    <div class="mb-3 anim-fade-right anim-delay-1">
+                        <span class="tech-badge-brand"><i class="fa-solid fa-microchip me-1-5"></i> @product?.Brand</span>
+                        @if (product?.IsNew == true) { <span class="badge ms-2" style="background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.2); padding: 6px 12px; border-radius: 8px;">Mới ra mắt</span> }
+                        @if (product?.IsBestSeller == true) { <span class="badge ms-1" style="background: rgba(253,224,71,0.12); color: #fde047; border: 1px solid rgba(253,224,71,0.2); padding: 6px 12px; border-radius: 8px;">Bán chạy</span> }
+                    </div>
+
+                    <h1 class="details-product-title mb-3 anim-fade-right anim-delay-2">@product?.Name</h1>
+
+                    <div class="mb-4 anim-fade-right anim-delay-3">
+                        <span class="details-price-tag">@(product?.Price.ToString("N0")) <span style="font-size: 1.1rem; font-weight: 600;">VND</span></span>
+                    </div>
+
+                    <div class="d-flex gap-3 mb-3 flex-wrap anim-fade-right anim-delay-3">
+                        <span class="text-info fw-bold small"><i class="fa-solid fa-chart-simple me-1"></i>Đã bán: @purchaseCount</span>
+                        <span class="text-warning fw-bold small">
+                            <i class="fa-solid fa-star me-1"></i>@avgRating.ToString("0.0")
+                            <span class="text-white-50">(@reviewCount đánh giá)</span>
+                        </span>
+                        <span class="text-success fw-bold small"><i class="fa-solid fa-circle-check me-1"></i>Còn hàng</span>
+                    </div>
+
+                    <p class="text-white-50 mb-4 anim-fade-right anim-delay-4" style="line-height: 1.6; font-size: 0.95rem;">@product?.Description</p>
+
+                    <!-- SPECS DYNAMIC -->
+                    @if (specs is not null)
+                    {
+                        <div class="specs-grid-box mb-4 anim-scale-in anim-delay-4">
+                            <h6 class="text-white fw-bold mb-3"><i class="fa-solid fa-sliders text-warning me-2"></i>Thông Số Kỹ Thuật</h6>
+                            <div class="spec-item"><i class="fa-solid fa-display"></i><span class="spec-label">Màn hình</span><span class="spec-value">@specs.Screen</span></div>
+                            <div class="spec-item"><i class="fa-solid fa-microchip"></i><span class="spec-label">CPU</span><span class="spec-value">@specs.Cpu</span></div>
+                            <div class="spec-item"><i class="fa-solid fa-memory"></i><span class="spec-label">RAM</span><span class="spec-value">@specs.Ram</span></div>
+                            <div class="spec-item"><i class="fa-solid fa-database"></i><span class="spec-label">Bộ nhớ</span><span class="spec-value">@specs.Storage</span></div>
+                            <div class="spec-item"><i class="fa-solid fa-camera"></i><span class="spec-label">Camera</span><span class="spec-value">@specs.Camera</span></div>
+                            <div class="spec-item"><i class="fa-solid fa-battery-full"></i><span class="spec-label">Pin</span><span class="spec-value">@specs.Battery</span></div>
+                            <div class="spec-item"><i class="fa-solid fa-gear"></i><span class="spec-label">HĐH</span><span class="spec-value">@specs.Os</span></div>
+                            <div class="spec-item"><i class="fa-solid fa-weight-scale"></i><span class="spec-label">Trọng lượng</span><span class="spec-value">@specs.Weight</span></div>
+                        </div>
+                    }
+                </div>
+
+                <!-- BUTTONS -->
+                <div class="row g-3 mt-2 anim-fade-up anim-delay-5">
+                    <div class="col-sm-6">
+                        <form asp-controller="Cart" asp-action="AddToCart" method="post">
+                            <input type="hidden" name="productId" value="@product?.Id" />
+                            <button type="submit" class="btn-action-base btn-add-to-cart w-100"><i class="fa-solid fa-cart-plus fa-lg"></i> Thêm Vào Giỏ</button>
+                        </form>
+                    </div>
+                    <div class="col-sm-6">
+                        <form asp-controller="Cart" asp-action="BuyNow" method="post">
+                            <input type="hidden" name="productId" value="@product?.Id" />
+                            <button type="submit" class="btn-action-base btn-buy-now w-100"><i class="fa-solid fa-bolt-lightning fa-lg"></i> Mua Ngay</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- RELATED PRODUCTS -->
+        @if (related.Count > 0)
+        {
+            <hr style="border-color: rgba(255,255,255,0.06); margin: 36px 0;" />
+            <div class="anim-fade-up">
+                <h5 class="text-white fw-bold mb-3"><i class="fa-solid fa-link me-2" style="color: #60a5fa;"></i>Sản phẩm cùng hãng</h5>
+                <div class="row g-3">
+                    @foreach (var r in related)
+                    {
+                        <div class="col-6 col-md-3">
+                            <a href="/Product/Details/@r.Id" class="related-card d-block hover-lift">
+                                <div class="thumb">
+                                    <img src="@r.ImageUrl" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1312/1312812.png'" alt="@r.Name" />
+                                </div>
+                                <div class="r-name">@r.Name</div>
+                                <div class="r-price">@r.Price.ToString("N0")đ</div>
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- REVIEWS -->
+        <div class="review-section-box anim-fade-up">
+            <h4 class="text-white fw-bold mb-4">
+                <i class="fa-solid fa-comments text-info me-2"></i>Đánh Giá Khách Hàng
+                @if (reviewCount > 0)
+                {
+                    <span class="badge bg-warning text-dark ms-2">@avgRating.ToString("0.0") <i class="fa-solid fa-star"></i> (@reviewCount)</span>
+                }
+            </h4>
+
+            <form asp-controller="Product" asp-action="SubmitReview" method="post" class="mb-4 p-3" style="background: rgba(255,255,255,0.02); border-radius: 14px; border: 1px solid rgba(255,255,255,0.04);">
+                <input type="hidden" name="productId" value="@product?.Id" />
+
+                <div class="mb-3 d-flex align-items-center gap-3">
+                    <span class="text-white-50 fw-bold mb-0">Đánh giá:</span>
+                    <div class="star-rating-selector">
+                        <input type="radio" id="star5" name="rating" value="5" required /><label for="star5" title="5 sao"><i class="fa-solid fa-star"></i></label>
+                        <input type="radio" id="star4" name="rating" value="4" /><label for="star4" title="4 sao"><i class="fa-solid fa-star"></i></label>
+                        <input type="radio" id="star3" name="rating" value="3" /><label for="star3" title="3 sao"><i class="fa-solid fa-star"></i></label>
+                        <input type="radio" id="star2" name="rating" value="2" /><label for="star2" title="2 sao"><i class="fa-solid fa-star"></i></label>
+                        <input type="radio" id="star1" name="rating" value="1" /><label for="star1" title="1 sao"><i class="fa-solid fa-star"></i></label>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <textarea class="review-textarea w-100" name="comment" rows="3" placeholder="Chia sẻ cảm nhận của bạn về sản phẩm..." required></textarea>
+                </div>
+
+                <div class="text-end">
+                    <button type="submit" class="btn text-white fw-bold px-4" style="background: linear-gradient(135deg, #11998e, #38ef7d); border: none; border-radius: 10px; padding: 10px 24px;">
+                        Gửi Đánh Giá <i class="fa-regular fa-paper-plane ms-1-5"></i>
+                    </button>
+                </div>
+            </form>
+
+            <hr style="border-color: rgba(255,255,255,0.06); margin: 24px 0;" />
+
+            <div class="review-list">
+                @if (reviews.Count == 0)
+                {
+                    <p class="text-white-50 text-center py-4">Chưa có đánh giá nào. Hãy là người đầu tiên!</p>
+                }
+                else
+                {
+                    foreach (var review in reviews)
+                    {
+                        var initials = review.ReviewerName.Length >= 2 ? review.ReviewerName[..2].ToUpper() : review.ReviewerName[..1].ToUpper();
+                        var timeAgo = (DateTime.Now - review.CreatedAt).Days switch
+                        {
+                            0 => "Hôm nay", 1 => "Hôm qua",
+                            int d when d < 7 => $"{d} ngày trước",
+                            int d when d < 30 => $"{d / 7} tuần trước",
+                            _ => review.CreatedAt.ToString("dd/MM/yyyy")
+                        };
+                        var colors = new[] { "#ee0979", "#ff6a00", "#10b981", "#3b82f6", "#8b5cf6", "#f59e0b" };
+                        var color = colors[review.ReviewerName.Length % colors.Length];
+                        var avatarUrl = review.ReviewerUserId.HasValue && avatars.ContainsKey(review.ReviewerUserId.Value)
+                            ? avatars[review.ReviewerUserId.Value]
+                            : null;
+
+                        <div class="d-flex gap-3 mb-4 p-3 anim-fade-up" style="background: rgba(255,255,255,0.02); border-radius: 14px; border: 1px solid rgba(255,255,255,0.04);">
+                            <div class="flex-shrink-0">
+                                @if (!string.IsNullOrEmpty(avatarUrl))
+                                {
+                                    <img src="@avatarUrl" class="rounded-circle" style="width:44px;height:44px;object-fit:cover;border:2px solid @color;" />
+                                }
+                                else
+                                {
+                                    <div class="rounded-circle text-white d-flex align-items-center justify-content-center fw-bold" style="width: 44px; height: 44px; background: @color; font-size:0.85rem;">@initials</div>
+                                }
+                            </div>
+                            <div style="flex:1; min-width:0;">
+                                <div class="d-flex align-items-center gap-2 mb-1 flex-wrap">
+                                    <h6 class="text-white fw-bold mb-0" style="font-size:0.88rem;">@review.ReviewerName</h6>
+                                    <small class="text-muted">@timeAgo</small>
+                                </div>
+                                <div class="mb-1" style="color: #fde047; font-size: 0.8rem;">
+                                    @for (int s = 0; s < 5; s++)
+                                    {
+                                        <i class="fa-@(s < review.Rating ? "solid" : "regular") fa-star"></i>
+                                    }
+                                </div>
+                                <p class="text-white-50 small mb-0" style="line-height: 1.5;">@review.Comment</p>
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+</div>

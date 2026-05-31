@@ -1,0 +1,96 @@
+@model PhoneStore.Models.Order
+@{
+    ViewData["Title"] = $"Đơn hàng #{Model.Id}";
+}
+
+<div class="mb-3">
+    <a href="@Url.Action("Orders")" class="btn btn-sm" style="background:rgba(255,255,255,0.05);color:#94a3b8;border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:6px 14px;font-size:0.82rem;">
+        <i class="fa-solid fa-arrow-left me-1"></i>Quay lại
+    </a>
+</div>
+
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div style="background: rgba(9,13,22,0.7); border-radius: 16px; border: 1px solid rgba(255,255,255,0.06); padding: 24px;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h4 class="fw-bold text-white mb-0">Đơn hàng #@Model.Id</h4>
+                @{
+                    var badge = Model.Status switch
+                    {
+                        "Chờ xác nhận" => "background:rgba(255,193,7,0.12);color:#facc15;border:1px solid rgba(255,193,7,0.2);",
+                        "Đang xử lý" => "background:rgba(59,130,246,0.12);color:#60a5fa;border:1px solid rgba(59,130,246,0.2);",
+                        "Đang giao" => "background:rgba(139,92,246,0.12);color:#a78bfa;border:1px solid rgba(139,92,246,0.2);",
+                        "Đã giao" => "background:rgba(16,185,129,0.12);color:#34d399;border:1px solid rgba(16,185,129,0.2);",
+                        "Đã hủy" => "background:rgba(239,68,68,0.12);color:#ef4444;border:1px solid rgba(239,68,68,0.2);",
+                        _ => "background:rgba(255,255,255,0.06);color:#94a3b8;border:1px solid rgba(255,255,255,0.1);"
+                    };
+                }
+                <span class="badge" style="@badge padding:6px 14px;border-radius:8px;font-size:0.82rem;font-weight:700;">@Model.Status</span>
+            </div>
+
+            <div class="mb-3 pb-3" style="border-bottom: 1px solid rgba(255,255,255,0.06);">
+                <div class="text-white-50 mb-1" style="font-size:0.85rem;">Ngày đặt: @Model.OrderDate.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                <div class="text-white-50" style="font-size:0.85rem;">Thanh toán: @Model.PaymentMethodLabel</div>
+            </div>
+
+            <table class="table table-dark m-0" style="font-size:0.85rem;">
+                <thead>
+                    <tr style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+                        <th class="py-2" style="color:#94a3b8;">Sản phẩm</th>
+                        <th class="py-2 text-center" style="color:#94a3b8;">SL</th>
+                        <th class="py-2 text-end" style="color:#94a3b8;">Giá</th>
+                        <th class="py-2 text-end" style="color:#94a3b8;">Thành tiền</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var item in Model.Items)
+                    {
+                        <tr style="border-bottom: 1px solid rgba(255,255,255,0.04);">
+                            <td class="py-2 text-white">@item.ProductName</td>
+                            <td class="py-2 text-center text-white-50">@item.Quantity</td>
+                            <td class="py-2 text-end text-white-50">@item.Price.ToString("N0")đ</td>
+                            <td class="py-2 text-end text-white fw-semibold">@item.Subtotal.ToString("N0")đ</td>
+                        </tr>
+                    }
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="3" class="py-2 text-end fw-bold text-white">Tổng cộng:</td>
+                        <td class="py-2 text-end fw-bold" style="color:#ff6a00;font-size:1.1rem;">@Model.TotalAmount.ToString("N0")đ</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div style="background: rgba(9,13,22,0.7); border-radius: 16px; border: 1px solid rgba(255,255,255,0.06); padding: 24px;">
+            <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-user me-2"></i>Thông tin khách hàng</h5>
+            <div class="mb-2"><span class="text-white-50" style="font-size:0.85rem;">Họ tên:</span> <span class="text-white ms-2">@Model.CustomerName</span></div>
+            <div class="mb-2"><span class="text-white-50" style="font-size:0.85rem;">Email:</span> <span class="text-white ms-2">@Model.Email</span></div>
+            <div class="mb-2"><span class="text-white-50" style="font-size:0.85rem;">SĐT:</span> <span class="text-white ms-2">@Model.Phone</span></div>
+            <div class="mb-3"><span class="text-white-50" style="font-size:0.85rem;">Địa chỉ:</span> <span class="text-white ms-2">@Model.Address</span></div>
+            @if (!string.IsNullOrEmpty(Model.Note))
+            {
+                <div class="mb-3"><span class="text-white-50" style="font-size:0.85rem;">Ghi chú:</span> <span class="text-white ms-2">@Model.Note</span></div>
+            }
+        </div>
+
+        <div style="background: rgba(9,13,22,0.7); border-radius: 16px; border: 1px solid rgba(255,255,255,0.06); padding: 24px; margin-top: 16px;">
+            <h5 class="fw-bold text-white mb-3"><i class="fa-solid fa-gear me-2"></i>Cập nhật trạng thái</h5>
+            <form method="post" action="@Url.Action("UpdateOrderStatus")">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+                <select name="status" class="form-select mb-3" style="background:rgba(15,23,42,0.8);color:#f1f5f9;border:1px solid rgba(255,255,255,0.1);border-radius:10px;">
+                @foreach (var s in new[] { "Chờ xác nhận", "Đang xử lý", "Đang giao", "Đã giao", "Đã hủy" })
+                {
+                    <option value="@s" selected="@(Model.Status == s ? true : false)">@s</option>
+                }
+            </select>
+                <button type="submit" class="btn btn-sm w-100" style="background:linear-gradient(135deg,#ff6a00,#ee0979);color:#fff;border:none;border-radius:10px;padding:10px;font-weight:700;">
+                    <i class="fa-solid fa-floppy-disk me-1"></i>Cập nhật
+                </button>
+            </form>
+        </div>
+    </div>
+</div>

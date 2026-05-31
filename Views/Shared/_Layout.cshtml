@@ -1,0 +1,1634 @@
+﻿@using System.Text.Json
+@using System.Security.Claims
+@using PhoneStore.Models
+@inject Microsoft.AspNetCore.Http.IHttpContextAccessor _httpCtx
+@inject PhoneStore.Data.AppDbContext _dbCtx
+@{
+    var cartJson = _httpCtx?.HttpContext?.Session?.GetString("CartItems");
+    var cartItems = cartJson is not null ? JsonSerializer.Deserialize<List<CartItem>>(cartJson) ?? new() : new List<CartItem>();
+    var cartCount = cartItems.Sum(c => c.Quantity);
+
+    var isLoggedIn = User.Identity?.IsAuthenticated == true;
+    var userName = isLoggedIn ? User.FindFirstValue(ClaimTypes.Name) : "";
+    var userEmail = isLoggedIn ? User.FindFirstValue(ClaimTypes.Email) : "";
+    var userRole = isLoggedIn ? User.FindFirstValue(ClaimTypes.Role) : "";
+    var isAdmin = isLoggedIn && userRole == "Admin";
+
+    string? userAvatarUrl = null;
+    decimal walletBalance = 0;
+    if (isLoggedIn)
+    {
+        var userIdStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (int.TryParse(userIdStr, out var uid))
+        {
+            var dbUser = _dbCtx.Users.Find(uid);
+            if (dbUser is not null)
+            {
+                walletBalance = dbUser.WalletBalance;
+                userAvatarUrl = dbUser.AvatarUrl;
+            }
+        }
+    }
+    else
+    {
+        var walletRaw = _httpCtx?.HttpContext?.Session?.GetString("WalletBalance");
+        decimal.TryParse(walletRaw, out walletBalance);
+    }
+}
+
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - PhoneStore</title>
+    
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/PhoneStore.styles.css" asp-append-version="true" />
+    
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght=400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* 🎨 GLOBAL BRAND DESIGN SYSTEM - CYBERPUNK DARK MODE */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #ff6a00, #ee0979);
+            --secondary-gradient: linear-gradient(135deg, #ff6a00, #ffb100);
+            --price-gradient: linear-gradient(135deg, #ff0844, #ffb199);
+            --bg-dark: #070a12;
+            --text-main: #ffffff;
+            --text-muted: rgba(255, 255, 255, 0.7);
+        }
+
+        /* ⚓ CẤU HÌNH STICKY FOOTER HOÀN HẢO */
+        html {
+            height: 100%;
+        }
+
+        body {
+            background-color: var(--bg-dark);
+            color: var(--text-main);
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            overflow-x: hidden;
+            position: relative;
+            
+            /* Kích hoạt Flexbox trục dọc cho body */
+            display: flex;
+            flex-direction: column;
+            min-height: 100%; /* Đảm bảo chiều cao tối thiểu bằng màn hình */
+            margin: 0;
+        }
+
+        /* Thẻ main sẽ tự động co giãn để chiếm trọn không gian trống, đẩy footer xuống đáy */
+        main {
+            flex: 1 0 auto; 
+        }
+
+        /* Giữ cho footer không bị co bóp */
+        footer {
+            flex-shrink: 0;
+        }
+
+        #circuitCanvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-dark);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-gradient);
+            border-radius: 4px;
+        }
+
+        .cyber-dropdown-item {
+            color: rgba(255, 255, 255, 0.85) !important;
+            font-size: 0.95rem;
+            transition: all 0.2s ease-in-out;
+        }
+        .cyber-dropdown-item:hover {
+            color: #ffffff !important;
+            background: linear-gradient(135deg, rgba(255, 106, 0, 0.15), rgba(238, 9, 121, 0.05)) !important;
+            box-shadow: inset 0 0 8px rgba(255, 106, 0, 0.15);
+        }
+
+        .me-2-5 { margin-right: 0.65rem; }
+        .chevron-rotate { transition: transform 0.3s ease; }
+
+        /* 👤 AVATAR MORPHING AUTH BUTTON */
+        .cyber-auth-wrapper { position: relative; }
+        .cyber-avatar-morph-btn {
+            text-decoration: none !important;
+            position: relative;
+            display: flex;
+            align-items: center;
+            background: rgba(255, 106, 0, 0.05);
+            border: 1px solid rgba(255, 106, 0, 0.3);
+            border-radius: 30px;
+            padding: 4px;
+            transition: all 0.45s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            overflow: hidden;
+            cursor: pointer;
+            max-width: 44px;
+            height: 44px;
+        }
+        .cyber-avatar-morph-btn:hover {
+            max-width: 170px; 
+            background: linear-gradient(135deg, rgba(255, 106, 0, 0.15), rgba(238, 9, 121, 0.2));
+            border-color: #ee0979;
+            box-shadow: 0 0 15px rgba(238, 9, 121, 0.4);
+            padding-right: 18px;
+        }
+        .avatar-frame {
+            position: relative;
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            border: 2px solid #ff6a00;
+            overflow: hidden;
+            background: #090d16;
+            flex-shrink: 0;
+            transition: all 0.45s ease;
+        }
+        .cyber-avatar-morph-btn:hover .avatar-frame {
+            border-color: #ee0979;
+            transform: rotate(360deg);
+        }
+        .avatar-img { width: 100%; height: 100%; object-fit: cover; }
+        .login-text {
+            color: #ffffff;
+            font-size: 0.8rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            white-space: nowrap;
+            margin-left: 10px;
+            opacity: 0;
+            transform: translateX(-15px);
+            transition: all 0.35s ease;
+        }
+        .cyber-avatar-morph-btn:hover .login-text { opacity: 1; transform: translateX(0); }
+        .scanner-line {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 2px;
+            background: #ee0979; box-shadow: 0 0 8px #ee0979;
+            animation: cyberScan 2s linear infinite;
+        }
+        @@keyframes cyberScan {
+            0% { top: 0%; }
+            50% { top: 100%; }
+            100% { top: 0%; }
+        }
+
+        /* 👑 STYLE HOVER CHO LINK FOOTER XỊN XÒ */
+        .hover-glow-text { transition: all 0.3s ease; }
+        .hover-glow-text:hover { color: #ff6a00 !important; text-shadow: 0 0 8px rgba(255,106,0,0.6); padding-left: 4px; }
+        
+        .cyber-social-icon {
+            transition: all 0.3s ease;
+        }
+        .cyber-social-icon:hover {
+            transform: translateY(-3px);
+            color: #ffffff !important;
+            border-color: #ee0979 !important;
+            box-shadow: 0 0 12px rgba(238, 9, 121, 0.5);
+        }
+        @@keyframes pulse-slow {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        .animate-pulse { animation: pulse-slow 2s infinite; }
+
+        /* 🌍 GLOBAL TEXT COLOR FIX: Đánh mạnh tay chữ đen trên nền tối */
+        body, p, span, div, h1, h2, h3, h4, h5, h6, li, td, th, input, textarea, select, option, label, small, strong, b, em, i, a:not(.dropdown-item):not(.nav-link):not(.list-group-item) {
+            color: #f1f5f9;
+        }
+        .breadcrumb-item.active, .breadcrumb-item a, .text-muted, .text-white-50, .text-secondary, small, .text-body-secondary {
+            color: #94a3b8 !important;
+        }
+        .breadcrumb-item.active { color: #ffffff !important; }
+        a { color: #ffffff; }
+        a:hover { color: #ff6a00; }
+        .table { color: #f1f5f9 !important; }
+        .table td, .table th { color: inherit; }
+        .dropdown-item { color: rgba(255,255,255,0.85) !important; }
+        .dropdown-item:hover { color: #ffffff !important; }
+        input, textarea, select { color: #ffffff !important; }
+        input::placeholder, textarea::placeholder { color: rgba(255,255,255,0.35) !important; }
+    </style>
+</head>
+<body>
+    <canvas id="circuitCanvas"></canvas>
+
+    <header style="position: relative; z-index: 9999;">
+        <nav class="navbar navbar-dark shadow-sm py-3" style="background: #070a12; border-bottom: 2px solid rgba(255, 106, 0, 0.45);">
+            <div class="container d-flex justify-content-between align-items-center">
+                
+                <div class="d-flex align-items-center gap-3">
+                    <a class="navbar-brand fw-bold text-transparent bg-clip-text m-0" style="background-image: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.5rem; letter-spacing: 0.5px;" asp-area="" asp-controller="Home" asp-action="Index">
+                        <i class="fa-solid fa-microchip me-2" style="color: #ff6a00; -webkit-text-fill-color: initial;"></i>PhoneStore
+                    </a>
+
+                    <div class="dropdown">
+                        <button class="btn d-flex align-items-center justify-content-center p-0 rounded-3 border-0 shadow-none" 
+                                type="button" 
+                                id="headerCyberMenu" 
+                                data-bs-toggle="dropdown" 
+                                aria-expanded="false" 
+                                style="background: rgba(255, 106, 0, 0.08); border: 1px solid rgba(255, 106, 0, 0.35) !important; color: #ffffff; width: 38px; height: 38px;">
+                            <i class="fa-solid fa-chevron-down text-white chevron-rotate" style="font-size: 0.85rem;"></i>
+                        </button>
+                        
+                        <ul class="dropdown-menu p-2 border-0 shadow-lg" 
+                            aria-labelledby="headerCyberMenu" 
+                            style="background: #090d16; border: 1px solid rgba(255, 106, 0, 0.25) !important; min-width: 190px; border-radius: 12px;">
+                            <li>
+                                <a class="dropdown-item py-2 px-3 rounded-3 fw-semibold cyber-dropdown-item d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                                    <i class="fa-solid fa-house me-2-5" style="color: #ff6a00; width: 18px;"></i>Trang chủ
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2 px-3 rounded-3 fw-semibold cyber-dropdown-item d-flex align-items-center" asp-area="" asp-controller="Product" asp-action="Index">
+                                    <i class="fa-solid fa-mobile-screen-button me-2-5" style="color: #ffb100; width: 18px;"></i>Sản phẩm
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2 px-3 rounded-3 fw-semibold cyber-dropdown-item d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Security">
+                                    <i class="fa-solid fa-shield-halved me-2-5" style="color: #10b981; width: 18px;"></i>Bảo mật
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-item py-2 px-3 rounded-3 fw-semibold cyber-dropdown-item d-flex align-items-center" asp-area="" asp-controller="Wallet" asp-action="Index">
+                                    <i class="fa-solid fa-wallet me-2-5" style="color: #22c55e; width: 18px;"></i>Ví của tôi
+                                    <span class="ms-auto badge rounded-pill fw-bold" style="background: rgba(16,185,129,0.15); color: #34d399; font-size: 0.65rem; border: 1px solid rgba(16,185,129,0.3); padding: 2px 8px;">
+                                        @walletBalance.ToString("N0")đ
+                                    </span>
+                                </a>
+                            </li>
+                            <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.08);"></li>
+                            <li>
+                                <a class="dropdown-item py-2 px-3 rounded-3 fw-semibold cyber-dropdown-item d-flex align-items-center position-relative" asp-area="" asp-controller="Cart" asp-action="Index">
+                                    <i class="fa-solid fa-cart-shopping me-2-5" style="color: #ffb100; width: 18px;"></i>Giỏ hàng
+                                    @if (cartCount > 0)
+                                    {
+                                        <span class="position-absolute top-0 end-0 translate-middle badge rounded-pill" style="background: #ef4444; font-size: 0.6rem; min-width: 18px; height: 18px; display: flex; align-items: center; justify-content: center; padding: 0 4px; box-shadow: 0 0 6px rgba(239,68,68,0.6);">
+                                            @cartCount
+                                        </span>
+                                    }
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="cyber-auth-wrapper d-flex align-items-center gap-3">
+                    <a href="/Wallet" class="text-decoration-none d-flex align-items-center gap-2 px-3 py-1 rounded-3" style="background: rgba(16, 185, 129, 0.06); border: 1px solid rgba(16, 185, 129, 0.2); transition: all 0.3s;" onmouseover="this.style.borderColor='#34d399'" onmouseout="this.style.borderColor='rgba(16,185,129,0.2)'">
+                        <i class="fa-solid fa-wallet" style="color: #34d399; font-size: 0.85rem;"></i>
+                        <span style="color: #34d399; font-weight: 700; font-size: 0.85rem;">@walletBalance.ToString("N0")<span style="font-size: 0.65rem;">đ</span></span>
+                    </a>
+
+                    @if (isLoggedIn)
+                    {
+                        <div class="dropdown" style="position: relative;">
+                            <a class="cyber-avatar-morph-btn" href="javascript:void(0)" role="button" data-bs-toggle="dropdown" aria-expanded="false" style="max-width: 170px; background: linear-gradient(135deg, rgba(255,106,0,0.15), rgba(238,9,121,0.2)); border-color: #ee0979; padding-right: 18px; cursor: default;">
+                                <div class="avatar-frame">
+                                    <img src="@(userAvatarUrl ?? "~/images/avatar-default.png")" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1144/1144760.png'" alt="User Avatar" class="avatar-img" />
+                                    <div class="scanner-line"></div>
+                                </div>
+                                <span class="login-text" style="opacity: 1; transform: translateX(0);">@userName</span>
+                            </a>
+                            <ul class="dropdown-menu p-2 border-0 shadow-lg" style="background: #090d16; border: 1px solid rgba(255,106,0,0.25) !important; min-width: 200px; border-radius: 12px;">
+                                <li><span class="dropdown-item-text py-1 px-3 text-white-50" style="font-size: 0.75rem;">@userEmail</span></li>
+                                <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.08);"></li>
+                                @if (isAdmin)
+                                {
+                                    <li>
+                                        <a class="dropdown-item py-2 px-3 rounded-3 fw-semibold cyber-dropdown-item d-flex align-items-center" asp-area="" asp-controller="Admin" asp-action="Dashboard">
+                                            <i class="fa-solid fa-shield-halved me-2-5" style="color: #ff6a00; width: 18px;"></i>Quản Lí
+                                        </a>
+                                    </li>
+                                }
+                                <li>
+                                    <a class="dropdown-item py-2 px-3 rounded-3 fw-semibold cyber-dropdown-item d-flex align-items-center" asp-area="" asp-controller="Account" asp-action="Index">
+                                        <i class="fa-solid fa-user me-2-5" style="color: #60a5fa; width: 18px;"></i>Tài khoản
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2 px-3 rounded-3 fw-semibold cyber-dropdown-item d-flex align-items-center" asp-area="" asp-controller="Wallet" asp-action="Index">
+                                        <i class="fa-solid fa-wallet me-2-5" style="color: #22c55e; width: 18px;"></i>Ví của tôi
+                                    </a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item py-2 px-3 rounded-3 fw-semibold cyber-dropdown-item d-flex align-items-center" asp-area="" asp-controller="Cart" asp-action="Index">
+                                        <i class="fa-solid fa-cart-shopping me-2-5" style="color: #ffb100; width: 18px;"></i>Giỏ hàng
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider" style="border-color: rgba(255,255,255,0.08);"></li>
+                                <li>
+                                    <a class="dropdown-item py-2 px-3 rounded-3 fw-semibold cyber-dropdown-item d-flex align-items-center" asp-area="" asp-controller="Auth" asp-action="Logout">
+                                        <i class="fa-solid fa-right-from-bracket me-2-5" style="color: #ef4444; width: 18px;"></i>Đăng xuất
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    }
+                    else
+                    {
+                        <a class="cyber-avatar-morph-btn" href="javascript:void(0)" onclick="openLoginModal()">
+                            <div class="avatar-frame">
+                                <img src="~/images/avatar-default.png" onerror="this.src='https://cdn-icons-png.flaticon.com/512/1144/1144760.png'" alt="User Avatar" class="avatar-img" />
+                                <div class="scanner-line"></div>
+                            </div>
+                            <span class="login-text">ĐĂNG NHẬP</span>
+                        </a>
+                    }
+                </div>
+
+            </div>
+        </nav>
+    </header>
+
+    <main role="main" class="pb-5">
+        <div class="container mt-4">
+            @RenderBody()
+        </div>
+    </main>
+
+    <footer class="py-5" style="background: rgba(4, 6, 11, 0.95); border-top: 2px solid #ee0979; box-shadow: 0 -5px 25px rgba(238, 9, 121, 0.2); backdrop-filter: blur(15px);">
+        <div class="container">
+            <div class="row gy-4 text-start">
+                
+                <div class="col-lg-4 col-md-6">
+                    <h5 class="fw-bold mb-3 text-transparent bg-clip-text" style="background-image: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent; font-size: 1.35rem; letter-spacing: 0.5px;">
+                        <i class="fa-solid fa-microchip me-2"></i>PHONESTORE SYSTEM
+                    </h5>
+                    <p class="text-white mb-3" style="font-size: 0.92rem; line-height: 1.6; opacity: 0.95;">
+                        Trải nghiệm không gian mua sắm di động tương lai. Nơi tích hợp công nghệ mã hóa tối tân cùng các dòng Flagship tối thượng nhất hành tinh.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <span class="badge bg-dark border border-success text-success px-2.5 py-1.5" style="font-size: 0.75rem; font-weight: 700; letter-spacing: 0.5px;">
+                            <i class="fa-solid fa-circle-check me-1 animate-pulse"></i> CORE SYSTEM: ONLINE
+                        </span>
+                        <span class="badge bg-dark border border-info text-info px-2.5 py-1.5" style="font-size: 0.75rem; font-weight: 700;">
+                            v3.1.0-NEXT
+                        </span>
+                    </div>
+                </div>
+
+                <div class="col-lg-3 col-md-6 ms-auto">
+                    <h6 class="text-white fw-bold text-uppercase mb-3" style="letter-spacing: 1px; font-size: 0.85rem; color: #ff6a00 !important;">Ban Điều Hành & Dự Án</h6>
+                    <ul class="list-unstyled d-flex flex-column gap-3" style="font-size: 0.9rem; color: #ffffff;">
+                        <li>
+                            <i class="fa-solid fa-user-tie me-2 text-danger"></i>
+                            <span class="text-white-50">CEO:</span> <strong style="text-shadow: 0 0 5px rgba(255,255,255,0.2);">Hoàng Việt Anh</strong>
+                        </li>
+                        <li class="pt-1 border-top border-secondary border-opacity-25">
+                            <i class="fa-solid fa-code me-2 text-info"></i>
+                            <span class="text-white-50">Phát triển:</span> <span class="fw-semibold">Nguyễn Trung Kiên</span>
+                        </li>
+                        <li>
+                            <i class="fa-solid fa-code me-2 text-info"></i>
+                            <span class="text-white-50">Phát triển:</span> <span class="fw-semibold">Trần Đức Anh</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-2 col-md-6">
+                    <h6 class="text-white fw-bold text-uppercase mb-3" style="letter-spacing: 1px; font-size: 0.85rem; color: #ff6a00 !important;">Hệ Thống</h6>
+                    <ul class="list-unstyled d-flex flex-column gap-2" style="font-size: 0.9rem;">
+                        <li><a asp-controller="Home" asp-action="Index" class="text-decoration-none text-white-50 hover-glow-text"><i class="fa-solid fa-angle-right me-1.5 text-danger"></i> Trang Chủ</a></li>
+                        <li><a asp-controller="Product" asp-action="Index" class="text-decoration-none text-white-50 hover-glow-text"><i class="fa-solid fa-angle-right me-1.5 text-danger"></i> Sản Phẩm</a></li>
+                        <li><a asp-controller="Home" asp-action="Security" class="text-decoration-none text-white-50 hover-glow-text"><i class="fa-solid fa-angle-right me-1.5 text-success"></i> Bảo Mật</a></li>
+                    </ul>
+                </div>
+
+                <div class="col-lg-3 col-md-6">
+                    <h6 class="text-white fw-bold text-uppercase mb-3" style="letter-spacing: 1px; font-size: 0.85rem; color: #ff6a00 !important;">Kênh Truyền Thông</h6>
+                    <div class="d-flex gap-3 mb-4">
+                        <a href="https://www.facebook.com/Vanhsociuuu" target="_blank" rel="noopener noreferrer" class="cyber-social-icon text-white d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background: rgba(255,106,0,0.1); border: 1px solid rgba(255,106,0,0.3); border-radius: 8px;" title="Facebook">
+                            <i class="fa-brands fa-facebook-f"></i>
+                        </a>
+                        <a href="https://github.com/Ti-hub-boop/NHOM6/tree/main/PhoneStore" target="_blank" rel="noopener noreferrer" class="cyber-social-icon text-white d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px;" title="GitHub">
+                            <i class="fa-brands fa-github"></i>
+                        </a>
+                        <a href="https://www.tiktok.com/@@hong_tham228?is_from_webapp=1&sender_device=pc" target="_blank" rel="noopener noreferrer" class="cyber-social-icon text-white d-flex align-items-center justify-content-center" style="width: 38px; height: 38px; background: rgba(238,9,121,0.1); border: 1px solid rgba(238,9,121,0.3); border-radius: 8px;" title="TikTok">
+                            <i class="fa-brands fa-tiktok"></i>
+                        </a>
+                    </div>
+                    <p class="text-white-50 m-0" style="font-size: 0.8rem;">&copy; 2026 PhoneStore. Bản quyền thuộc Nhóm 6.</p>
+                </div>
+
+            </div>
+        </div>
+    </footer>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+
+    <style>
+        /* ===== AUTH MODAL (LOGIN / REGISTER) ===== */
+        .auth-overlay {
+            position: fixed; inset: 0; z-index: 9999;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(6px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            animation: authFadeIn 0.25s ease;
+        }
+        .auth-overlay.active { display: flex; }
+        @@keyframes authFadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .auth-modal {
+            background: linear-gradient(145deg, #0d111c, #0a0e18);
+            border: 1px solid rgba(255,106,0,0.25);
+            border-radius: 20px;
+            padding: 32px 30px 26px;
+            width: 100%;
+            max-width: 400px;
+            position: relative;
+            box-shadow: 0 25px 80px rgba(0,0,0,0.8), 0 0 60px rgba(255,106,0,0.08);
+            animation: authSlideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        @@keyframes authSlideUp {
+            from { opacity: 0; transform: translateY(30px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        .auth-modal .auth-close {
+            position: absolute; top: 12px; right: 16px;
+            background: none; border: none;
+            color: #64748b; font-size: 1.4rem;
+            cursor: pointer; transition: all 0.3s;
+            line-height: 1;
+        }
+        .auth-modal .auth-close:hover { color: #ef4444; transform: rotate(90deg); }
+        .auth-modal .auth-title {
+            font-size: 1.4rem;
+            font-weight: 900;
+            margin-bottom: 4px;
+            background: linear-gradient(135deg, #ff6a00, #ee0979);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .auth-modal .auth-subtitle {
+            color: #64748b;
+            font-size: 0.8rem;
+            margin-bottom: 20px;
+        }
+        .auth-modal .form-group {
+            margin-bottom: 14px;
+        }
+        .auth-modal .form-group label {
+            color: #94a3b8;
+            font-size: 0.78rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 5px;
+            display: block;
+        }
+        .auth-modal .form-input {
+            width: 100%;
+            background: rgba(15,23,42,0.8);
+            border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 10px;
+            padding: 11px 14px 11px 36px;
+            color: #f1f5f9;
+            font-size: 0.88rem;
+            transition: all 0.3s;
+            outline: none;
+        }
+        .auth-modal .form-input:focus {
+            border-color: #ff6a00;
+            box-shadow: 0 0 0 3px rgba(255,106,0,0.15);
+        }
+        .auth-modal .form-input::placeholder { color: #475569; }
+        .auth-modal .input-wrap {
+            position: relative;
+        }
+        .auth-modal .input-wrap .input-icon {
+            position: absolute;
+            left: 12px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #475569;
+            font-size: 0.85rem;
+            pointer-events: none;
+        }
+        .auth-modal .auth-btn {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            background: linear-gradient(135deg, #ff6a00, #ee0979);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 4px;
+            letter-spacing: 0.5px;
+        }
+        .auth-modal .auth-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(238,9,121,0.4);
+        }
+        .auth-modal .auth-divider {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin: 16px 0;
+            color: #475569;
+            font-size: 0.75rem;
+        }
+        .auth-modal .auth-divider::before,
+        .auth-modal .auth-divider::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.06);
+        }
+        .auth-modal .auth-link {
+            color: #60a5fa;
+            text-decoration: none;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.25s;
+        }
+        .auth-modal .auth-link:hover { color: #ff6a00; text-shadow: 0 0 10px rgba(255,106,0,0.3); }
+        .auth-modal .auth-forgot {
+            color: #64748b;
+            font-size: 0.78rem;
+            text-decoration: none;
+            display: inline-block;
+            margin-top: 6px;
+            transition: color 0.25s;
+        }
+        .auth-modal .auth-forgot:hover { color: #60a5fa; }
+        .auth-modal .auth-footer-text {
+            color: #64748b;
+            font-size: 0.82rem;
+            text-align: center;
+            margin-top: 14px;
+        }
+        .auth-modal::-webkit-scrollbar { width: 4px; }
+        .auth-modal::-webkit-scrollbar-thumb { background: rgba(255,106,0,0.3); border-radius: 4px; }
+
+        /* ===== AUTH TABS ===== */
+        .auth-tabs { display:flex; margin-bottom:20px; background:rgba(15,23,42,0.6); border-radius:12px; padding:3px; border:1px solid rgba(255,255,255,0.04); }
+        .auth-tab { flex:1; padding:9px 0; text-align:center; border:none; background:transparent; color:#64748b; font-size:0.82rem; font-weight:700; border-radius:10px; cursor:pointer; transition:all 0.35s cubic-bezier(0.22,1,0.36,1); letter-spacing:0.3px; }
+        .auth-tab.active { background:linear-gradient(135deg,#ff6a00,#ee0979); color:#fff; box-shadow:0 4px 15px rgba(238,9,121,0.3); }
+        .auth-tab:hover:not(.active) { color:#94a3b8; }
+        .auth-tab i { margin-right:6px; }
+
+        /* ===== AUTH FORM PANELS ===== */
+        .auth-panel { display:none; }
+        .auth-panel.active { display:block; animation:authPanelIn 0.4s cubic-bezier(0.22,1,0.36,1) forwards; }
+        @@keyframes authPanelIn { from{opacity:0;transform:translateX(12px)} to{opacity:1;transform:translateX(0)} }
+
+        .auth-form { display:flex; flex-direction:column; gap:12px; }
+        .auth-form .form-group { margin-bottom:0; }
+
+        /* Password toggle */
+        .input-wrap .pw-toggle {
+            position:absolute; right:12px; top:50%; transform:translateY(-50%);
+            background:none; border:none; color:#475569; cursor:pointer; font-size:0.85rem; padding:4px;
+            transition:color 0.25s; line-height:1;
+        }
+        .input-wrap .pw-toggle:hover { color:#ff6a00; }
+
+        /* Button loading */
+        .auth-btn .spinner { display:none; width:16px; height:16px; border:2px solid rgba(255,255,255,0.3); border-top-color:#fff; border-radius:50%; animation:authSpin 0.6s linear infinite; margin-right:8px; vertical-align:middle; }
+        .auth-btn.loading .spinner { display:inline-block; }
+        .auth-btn.loading .btn-text { opacity:0.7; }
+        @@keyframes authSpin { to{transform:rotate(360deg)} }
+
+        /* Shake error */
+        @@keyframes authShake { 0%,100%{transform:translateX(0)} 20%{transform:translateX(-6px)} 40%{transform:translateX(6px)} 60%{transform:translateX(-4px)} 80%{transform:translateX(4px)} }
+        .auth-error-shake { animation:authShake 0.4s ease; }
+
+        /* Success pulse on inputs */
+        .form-input.success { border-color:#10b981 !important; box-shadow:0 0 0 3px rgba(16,185,129,0.12) !important; }
+
+        .auth-modal .auth-panel-note { color:#475569; font-size:0.7rem; text-align:center; margin-top:0; }
+
+        /* ===== TOAST NOTIFICATION ===== */
+        .toast-container {
+            position: fixed; top: 20px; right: 20px; z-index: 999999;
+            display: flex; flex-direction: column; gap: 10px;
+            pointer-events: none;
+        }
+        .toast-item {
+            pointer-events: auto;
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px 20px; border-radius: 12px;
+            font-size: 0.85rem; font-weight: 600;
+            backdrop-filter: blur(16px);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            transform: translateX(120%); opacity: 0;
+            transition: transform 0.4s cubic-bezier(0.22,1,0.36,1), opacity 0.3s;
+            max-width: 380px;
+        }
+        .toast-item.show {
+            transform: translateX(0); opacity: 1;
+        }
+        .toast-item.hide {
+            transform: translateX(50px); opacity: 0;
+            transition: transform 0.3s, opacity 0.3s;
+        }
+        .toast-item i { font-size: 1.1rem; flex-shrink: 0; }
+        .toast-item .toast-close {
+            margin-left: auto; cursor: pointer; opacity: 0.5;
+            background: none; border: none; color: inherit;
+            font-size: 1rem; padding: 0 0 0 10px;
+            transition: opacity 0.2s;
+        }
+        .toast-item .toast-close:hover { opacity: 1; }
+        .toast-success {
+            background: rgba(16,185,129,0.18);
+            border: 1px solid rgba(16,185,129,0.35);
+            color: #34d399;
+        }
+        .toast-error {
+            background: rgba(239,68,68,0.18);
+            border: 1px solid rgba(239,68,68,0.35);
+            color: #ef4444;
+        }
+
+        /* ===== MAGIC ANIMATIONS NÂNG CẤP ===== */
+        .magic-fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .magic-fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        .magic-fade-left {
+            opacity: 0;
+            transform: translateX(-30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .magic-fade-left.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .magic-fade-right {
+            opacity: 0;
+            transform: translateX(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .magic-fade-right.visible {
+            opacity: 1;
+            transform: translateX(0);
+        }
+        .magic-scale-in {
+            opacity: 0;
+            transform: scale(0.88);
+            transition: opacity 0.5s cubic-bezier(0.34, 1.56, 0.64, 1), transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+        .magic-scale-in.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        /* 🚀 Animations mới mạnh mẽ hơn */
+        @@keyframes magicSlideUp { 0%{opacity:0;transform:translateY(40px) scale(0.95)} 100%{opacity:1;transform:translateY(0) scale(1)} }
+        @@keyframes magicZoomBounce { 0%{opacity:0;transform:scale(0.7)} 60%{transform:scale(1.04)} 100%{opacity:1;transform:scale(1)} }
+        @@keyframes magicTiltIn { 0%{opacity:0;transform:perspective(600px) rotateX(12deg) translateY(30px)} 100%{opacity:1;transform:perspective(600px) rotateX(0) translateY(0)} }
+
+        .magic-slide-up { opacity:0; animation: magicSlideUp 0.65s cubic-bezier(0.22,1,0.36,1) forwards; }
+        .magic-zoom-bounce { opacity:0; animation: magicZoomBounce 0.6s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+        .magic-tilt-in { opacity:0; animation: magicTiltIn 0.6s cubic-bezier(0.22,1,0.36,1) forwards; }
+
+        .magic-delay-1 { animation-delay: 0.08s; }
+        .magic-delay-2 { animation-delay: 0.16s; }
+        .magic-delay-3 { animation-delay: 0.24s; }
+        .magic-delay-4 { animation-delay: 0.32s; }
+        .magic-delay-5 { animation-delay: 0.40s; }
+        .magic-delay-6 { animation-delay: 0.48s; }
+        .magic-delay-7 { animation-delay: 0.56s; }
+        .magic-delay-8 { animation-delay: 0.64s; }
+
+        /* Hiệu ứng hover 3D tilt cho card */
+        .magic-tilt-card {
+            transition: transform 0.3s cubic-bezier(0.22,1,0.36,1), box-shadow 0.3s;
+            will-change: transform;
+        }
+        .magic-tilt-card:hover {
+            transform: perspective(600px) rotateY(2deg) rotateX(-1deg) translateY(-4px);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.3);
+        }
+
+        /* Shimmer loading cho nội dung đang tải */
+        @@keyframes shimmerBg { 0%{background-position:-200% 0} 100%{background-position:200% 0} }
+        .magic-shimmer {
+            background: linear-gradient(90deg, rgba(255,255,255,0.02) 25%, rgba(255,255,255,0.06) 50%, rgba(255,255,255,0.02) 75%);
+            background-size: 200% 100%;
+            animation: shimmerBg 1.5s infinite;
+        }
+
+        /* Stagger cho grid sản phẩm */
+        .product-card-stagger {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        .product-card-stagger.visible {
+            animation: magicSlideUp 0.5s cubic-bezier(0.22,1,0.36,1) forwards;
+        }
+
+        /* Click ripple */
+        .magic-ripple {
+            position: fixed;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.35);
+            transform: scale(0);
+            animation: rippleAnim 0.6s ease-out forwards;
+            pointer-events: none;
+            z-index: 99999;
+        }
+        @@keyframes rippleAnim {
+            to { transform: scale(4); opacity: 0; }
+        }
+
+        /* Page transition overlay */
+        .page-transition-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 99998;
+            pointer-events: none;
+            background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), rgba(59,130,246,0.08) 0%, transparent 60%);
+            opacity: 0;
+            transition: opacity 0.15s;
+        }
+        .page-transition-overlay.active {
+            opacity: 1;
+            transition: opacity 0.05s;
+        }
+
+        /* Hover cyber glow cho mọi nút */
+        .magic-hover {
+            transition: all 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .magic-hover:hover {
+            filter: brightness(1.12);
+            box-shadow: 0 0 25px rgba(59, 130, 246, 0.25);
+            transform: translateY(-2px);
+        }
+    </style>
+
+    <div class="page-transition-overlay" id="pageTransitionOverlay"></div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            // === DROPDOWN CHEVRON ===
+            const menuDropdown = document.getElementById('headerCyberMenu');
+            if (menuDropdown) {
+                menuDropdown.addEventListener('show.bs.dropdown', function () {
+                    const icon = this.querySelector('.chevron-rotate');
+                    if (icon) icon.style.transform = 'rotate(180deg)';
+                });
+                menuDropdown.addEventListener('hide.bs.dropdown', function () {
+                    const icon = this.querySelector('.chevron-rotate');
+                    if (icon) icon.style.transform = 'rotate(0deg)';
+                });
+            }
+
+            // ==== 1. BLUE CIRCUIT BACKGROUND (NÂNG CẤP) ====
+            const canvas = document.getElementById('circuitCanvas');
+            if (canvas) {
+                const ctx = canvas.getContext('2d');
+                let width = canvas.width = window.innerWidth;
+                let height = canvas.height = window.innerHeight;
+                window.addEventListener('resize', () => {
+                    width = canvas.width = window.innerWidth;
+                    height = canvas.height = window.innerHeight;
+                });
+
+                const lineCount = 28;
+                const lines = [];
+                const nodes = [];
+
+                class CircuitLine {
+                    constructor() { this.reset(); }
+                    reset() {
+                        this.points = [];
+                        let x = Math.random() * width;
+                        let y = Math.random() * height;
+                        this.points.push({ x, y });
+
+                        const segments = 4 + Math.floor(Math.random() * 5);
+                        for (let i = 0; i < segments; i++) {
+                            const dir = Math.floor(Math.random() * 4);
+                            const len = 50 + Math.random() * 120;
+                            if (dir === 0) x += len;
+                            else if (dir === 1) x -= len;
+                            else if (dir === 2) y += len;
+                            else y -= len;
+                            this.points.push({ x, y });
+                            // Thêm node tại mỗi điểm giao
+                            if (i > 0 && Math.random() > 0.4) {
+                                nodes.push({ x: this.points[i].x, y: this.points[i].y, size: 2 + Math.random() * 3, alpha: 0.2 + Math.random() * 0.3 });
+                            }
+                        }
+                        this.leds = [];
+                        const ledCount = 2 + Math.floor(Math.random() * 3);
+                        for (let i = 0; i < ledCount; i++) {
+                            this.leds.push({
+                                progress: Math.random(),
+                                speed: 0.0015 + Math.random() * 0.0035,
+                                color: Math.random() > 0.5 ? '#3b82f6' : (Math.random() > 0.5 ? '#60a5fa' : '#93c5fd')
+                            });
+                        }
+                    }
+                    draw() {
+                        if (this.points.length < 2) return;
+                        ctx.beginPath();
+                        ctx.moveTo(this.points[0].x, this.points[0].y);
+                        for (let i = 1; i < this.points.length; i++) {
+                            // Vẽ góc vuông (L-shape) thay vì đường chéo
+                            const prev = this.points[i - 1];
+                            const curr = this.points[i];
+                            if (Math.random() > 0.5) {
+                                ctx.lineTo(curr.x, prev.y);
+                                ctx.lineTo(curr.x, curr.y);
+                            } else {
+                                ctx.lineTo(prev.x, curr.y);
+                                ctx.lineTo(curr.x, curr.y);
+                            }
+                        }
+                        ctx.strokeStyle = "rgba(59, 130, 246, 0.12)";
+                        ctx.lineWidth = 1.8;
+                        ctx.stroke();
+                        // Vẽ lớp phát sáng mờ
+                        ctx.beginPath();
+                        ctx.moveTo(this.points[0].x, this.points[0].y);
+                        for (let i = 1; i < this.points.length; i++) {
+                            const prev = this.points[i - 1];
+                            const curr = this.points[i];
+                            if (Math.random() > 0.5) {
+                                ctx.lineTo(curr.x, prev.y);
+                                ctx.lineTo(curr.x, curr.y);
+                            } else {
+                                ctx.lineTo(prev.x, curr.y);
+                                ctx.lineTo(curr.x, curr.y);
+                            }
+                        }
+                        ctx.strokeStyle = "rgba(59, 130, 246, 0.03)";
+                        ctx.lineWidth = 6;
+                        ctx.stroke();
+                    }
+                    drawLEDs() {
+                        for (let l = 0; l < this.leds.length; l++) {
+                            const led = this.leds[l];
+                            led.progress += led.speed;
+                            if (led.progress >= 1) { led.progress = 0; continue; }
+                            const totalSegments = this.points.length - 1;
+                            const seg = Math.floor(led.progress * totalSegments);
+                            const segP = (led.progress * totalSegments) - seg;
+                            const p1 = this.points[seg];
+                            const p2 = this.points[seg + 1];
+                            if (!p1 || !p2) continue;
+                            // Tính theo đường L-shape
+                            const midX = p2.x;
+                            const midY = p1.y;
+                            const totalLen = Math.abs(p2.x - p1.x) + Math.abs(p2.y - p1.y);
+                            const progressAlong = segP * totalLen;
+                            let cx, cy;
+                            const horizLen = Math.abs(p2.x - p1.x);
+                            if (progressAlong <= horizLen) {
+                                cx = p1.x + (p2.x > p1.x ? 1 : -1) * progressAlong;
+                                cy = p1.y;
+                            } else {
+                                cx = p2.x;
+                                cy = p1.y + (p2.y > p1.y ? 1 : -1) * (progressAlong - horizLen);
+                            }
+
+                            ctx.shadowBlur = 18;
+                            ctx.shadowColor = led.color;
+                            ctx.beginPath();
+                            ctx.arc(cx, cy, 2.5, 0, Math.PI * 2);
+                            ctx.fillStyle = led.color;
+                            ctx.fill();
+
+                            // Đuôi sáng
+                            ctx.shadowBlur = 0;
+                            ctx.beginPath();
+                            ctx.arc(cx, cy, 5, 0, Math.PI * 2);
+                            ctx.fillStyle = this.hexToRgba(led.color, 0.15);
+                            ctx.fill();
+                        }
+                        ctx.shadowBlur = 0;
+                    }
+                    hexToRgba(hex, alpha) {
+                        const r = parseInt(hex.slice(1, 3), 16);
+                        const g = parseInt(hex.slice(3, 5), 16);
+                        const b = parseInt(hex.slice(5, 7), 16);
+                        return 'rgba(' + r + ',' + g + ',' + b + ',' + alpha + ')';
+                    }
+                }
+
+                for (let i = 0; i < lineCount; i++) { lines.push(new CircuitLine()); }
+
+                function animate() {
+                    ctx.clearRect(0, 0, width, height);
+                    // Vẽ node
+                    for (let n = 0; n < nodes.length; n++) {
+                        const node = nodes[n];
+                        ctx.shadowBlur = 8;
+                        ctx.shadowColor = '#3b82f6';
+                        ctx.beginPath();
+                        ctx.arc(node.x, node.y, node.size, 0, Math.PI * 2);
+                        ctx.fillStyle = 'rgba(59, 130, 246, ' + node.alpha + ')';
+                        ctx.fill();
+                        ctx.shadowBlur = 0;
+                    }
+                    for (let i = 0; i < lines.length; i++) {
+                        lines[i].draw();
+                        lines[i].drawLEDs();
+                    }
+                    requestAnimationFrame(animate);
+                }
+                animate();
+            }
+
+            // ==== 2. SCROLL MAGIC ANIMATION NÂNG CẤP ====
+            if ('IntersectionObserver' in window) {
+                const observer = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add('visible');
+                            observer.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.06, rootMargin: '0px 0px -30px 0px' });
+
+                document.querySelectorAll('.magic-fade-up, .magic-fade-left, .magic-fade-right, .magic-scale-in, .product-card-stagger').forEach(el => {
+                    observer.observe(el);
+                });
+
+                // Observe product cards, sections, cards tự động
+                document.querySelectorAll('.product-card-custom, .cyber-product-card, .card, .section-flashsale, .section-new-releases, .section-trending, .cyber-filter-card, .checkout-wrapper, .cart-wrapper, .order-success-wrapper, .invoice-wrapper, .wallet-card, .topup-wrapper, [class*="section-"], .aurora-box, .admin-stat-card, .admin-quick-link, .sec-card').forEach(el => {
+                    if (!el.classList.contains('magic-fade-up') && !el.classList.contains('magic-fade-left') && !el.classList.contains('magic-fade-right') && !el.classList.contains('magic-scale-in') && !el.classList.contains('product-card-stagger')) {
+                        el.classList.add('magic-fade-up');
+                        observer.observe(el);
+                    }
+                });
+
+                // Stagger product cards in grid
+                var staggerCards = document.querySelectorAll('.product-card-stagger');
+                staggerCards.forEach(function(el, i) {
+                    el.style.animationDelay = (i * 0.06) + 's';
+                });
+            }
+
+            // ==== 3. CLICK RIPPLE EFFECT ====
+            document.addEventListener('click', function (e) {
+                const target = e.target.closest('a, button, .btn, .list-group-item, .page-link, .payment-option, .method-card, .amount-chip');
+                if (!target) return;
+                const ripple = document.createElement('div');
+                ripple.className = 'magic-ripple';
+                const size = Math.max(target.offsetWidth, target.offsetHeight) * 0.6;
+                const rect = target.getBoundingClientRect();
+                ripple.style.width = ripple.style.height = size + 'px';
+                ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+                ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+                target.style.position = 'relative';
+                target.style.overflow = 'hidden';
+                target.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+
+            // ==== 4. PAGE TRANSITION FADE ====
+            const overlay = document.getElementById('pageTransitionOverlay');
+            if (overlay) {
+                document.querySelectorAll('a:not([target="_blank"]):not([href^="#"]):not([href^="javascript"]):not([href^="tel"]):not([href^="mailto"])').forEach(function (link) {
+                    link.addEventListener('click', function (e) {
+                        if (this.hostname === window.location.hostname && this.getAttribute('href') !== '#') {
+                            overlay.style.setProperty('--x', e.clientX / window.innerWidth * 100 + '%');
+                            overlay.style.setProperty('--y', e.clientY / window.innerWidth * 100 + '%');
+                            overlay.classList.add('active');
+                        }
+                    });
+                });
+                window.addEventListener('pageshow', function () { overlay.classList.remove('active'); });
+            }
+
+            // ==== 5. HOVER CYBER GLOW ====
+            document.querySelectorAll('.cyber-product-card, .btn, .btn-continue, .btn-checkout, .btn-return, .btn-place-order, .btn-topup, .btn-deposit, .btn-view-custom').forEach(function (el) {
+                el.classList.add('magic-hover');
+            });
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+    @* 🤖 TRỢ LÝ AI PHONESTORE — FLOATING CHAT NÂNG CẤP *@
+    <style>
+        .chat-fab {
+            position: fixed !important;
+            bottom: 24px !important;
+            right: 24px !important;
+            z-index: 99999 !important;
+            width: 58px; height: 58px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ff6a00, #ee0979);
+            border: none;
+            color: #ffffff;
+            font-size: 1.4rem;
+            cursor: pointer;
+            box-shadow: 0 6px 25px rgba(238, 9, 121, 0.5);
+            transition: all 0.3s;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            visibility: visible !important;
+            opacity: 1 !important;
+            pointer-events: auto !important;
+        }
+        .chat-fab:hover { transform: scale(1.08); box-shadow: 0 8px 35px rgba(238, 9, 121, 0.7); }
+        .chat-fab .pulse-ring {
+            position: absolute; width: 100%; height: 100%;
+            border-radius: 50%;
+            border: 2px solid rgba(255,106,0,0.3);
+            animation: chatPulse 2s infinite;
+        }
+        @@keyframes chatPulse { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.5); opacity: 0; } }
+        .chat-window {
+            position: fixed; bottom: 96px; right: 24px; z-index: 99998;
+            width: 380px; max-height: 560px;
+            background: rgba(9, 13, 22, 0.96); backdrop-filter: blur(20px);
+            border: 1px solid rgba(255,106,0,0.3); border-radius: 20px;
+            box-shadow: 0 25px 60px rgba(0,0,0,0.8);
+            display: none; flex-direction: column; overflow: hidden; transform-origin: bottom right;
+        }
+        .chat-window.open { display: flex; animation: chatSlideIn 0.3s ease; }
+        @@keyframes chatSlideIn { 0% { opacity: 0; transform: scale(0.85) translateY(20px); } 100% { opacity: 1; transform: scale(1) translateY(0); } }
+        .chat-header {
+            background: linear-gradient(135deg, rgba(255,106,0,0.12), rgba(238,9,121,0.12));
+            border-bottom: 1px solid rgba(255,106,0,0.2); padding: 14px 18px;
+            display: flex; align-items: center; gap: 10px; flex-shrink: 0;
+        }
+        .chat-header .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #ff6a00, #ee0979); display: flex; align-items: center; justify-content: center; font-size: 1rem; color: #fff; flex-shrink: 0; }
+        .chat-header .info h6 { color: #fff; font-weight: 800; margin: 0; font-size: 0.85rem; }
+        .chat-header .info small { color: #34d399; font-size: 0.68rem; font-weight: 600; }
+        .chat-header .btn-close-chat { margin-left: auto; background: transparent; border: none; color: #64748b; font-size: 1.2rem; cursor: pointer; transition: color 0.2s; }
+        .chat-header .btn-close-chat:hover { color: #ef4444; }
+        .chat-messages {
+            flex: 1; overflow-y: auto; padding: 14px;
+            display: flex; flex-direction: column; gap: 8px;
+            min-height: 200px; max-height: 310px;
+        }
+        .chat-messages::-webkit-scrollbar { width: 4px; }
+        .chat-messages::-webkit-scrollbar-track { background: transparent; }
+        .chat-messages::-webkit-scrollbar-thumb { background: rgba(255,106,0,0.3); border-radius: 10px; }
+        .msg { max-width: 88%; padding: 9px 13px; border-radius: 14px; font-size: 0.8rem; line-height: 1.5; word-wrap: break-word; animation: msgPop 0.25s ease; }
+        @@keyframes msgPop { 0% { opacity: 0; transform: translateY(6px) scale(0.96); } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+        .msg.bot { align-self: flex-start; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.06); color: #f1f5f9; border-bottom-left-radius: 4px; }
+        .msg.user { align-self: flex-end; background: linear-gradient(135deg, rgba(255,106,0,0.15), rgba(238,9,121,0.15)); border: 1px solid rgba(255,106,0,0.2); color: #fff; border-bottom-right-radius: 4px; }
+        .msg .time { display: block; font-size: 0.58rem; color: #64748b; margin-top: 3px; text-align: right; }
+        .chat-input-area {
+            display: flex; align-items: center; gap: 6px;
+            padding: 8px 12px 10px;
+            border-top: 1px solid rgba(255,255,255,0.04);
+            flex-shrink: 0;
+        }
+        .chat-input-area input {
+            flex: 1; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px; padding: 8px 14px; color: #f1f5f9; font-size: 0.8rem;
+            outline: none; transition: border 0.2s;
+        }
+        .chat-input-area input:focus { border-color: rgba(255,106,0,0.4); }
+        .chat-input-area input::placeholder { color: #64748b; }
+        .chat-input-area .btn-send {
+            width: 38px; height: 38px; border-radius: 50%;
+            background: linear-gradient(135deg, #ff6a00, #ee0979);
+            border: none; color: #fff; font-size: 0.9rem;
+            cursor: pointer; transition: transform 0.2s; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .chat-input-area .btn-send:hover { transform: scale(1.08); }
+        .chat-input-area .btn-send:disabled { opacity: 0.4; cursor: default; transform: none; }
+        .chat-suggestions {
+            padding: 6px 12px 2px;
+            display: flex; flex-wrap: wrap; gap: 5px;
+            flex-shrink: 0;
+        }
+        .chat-suggestions .chip {
+            background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 20px; padding: 5px 12px;
+            font-size: 0.7rem; color: #94a3b8; cursor: pointer;
+            transition: all 0.25s; font-weight: 600; white-space: nowrap;
+        }
+        .chat-suggestions .chip:hover { background: rgba(255,106,0,0.1); border-color: rgba(255,106,0,0.3); color: #ff6a00; }
+        .typing-dots { display: flex; gap: 4px; padding: 6px 0; }
+        .typing-dots span { width: 7px; height: 7px; border-radius: 50%; background: #94a3b8; animation: dotBounce 1.2s infinite; }
+        .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+        @@keyframes dotBounce { 0%,80%,100% { transform: translateY(0); } 40% { transform: translateY(-6px); } }
+    </style>
+
+    <button class="chat-fab" id="chatFab" onclick="openChat()" title="Trợ lý AI PhoneStore">
+        <i class="fa-solid fa-headset" id="chatFabIcon"></i>
+        <div class="pulse-ring"></div>
+    </button>
+
+    <div class="chat-window" id="chatWindow">
+        <div class="chat-header">
+            <div class="avatar"><i class="fa-solid fa-brain"></i></div>
+            <div class="info">
+                <h6>AI Trợ lý PhoneStore</h6>
+                <small><i class="fa-solid fa-circle me-1" style="font-size: 0.5rem;"></i>Trực tuyến</small>
+            </div>
+            <button class="btn-close-chat" onclick="closeChat()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="chat-messages" id="chatMessages"></div>
+        <div class="chat-suggestions" id="chatSuggestions"></div>
+        <div class="chat-input-area">
+            <input type="text" id="chatInput" placeholder="Nhập câu hỏi của bạn..." onkeydown="if(event.key==='Enter')sendMessage()" />
+            <button class="btn-send" id="chatSendBtn" onclick="sendMessage()"><i class="fa-solid fa-paper-plane"></i></button>
+        </div>
+    </div>
+
+    <script>
+        var chatOpen = false, msgCount = 0, chatReady = false;
+
+        function openChat() {
+            if (chatOpen) { closeChat(); return; }
+            chatOpen = true;
+            document.getElementById('chatWindow').classList.add('open');
+            document.getElementById('chatFabIcon').className = 'fa-solid fa-xmark';
+            if (!chatReady) {
+                chatReady = true;
+                setTimeout(function() { addBotMsg('👋 Chào bạn! Mình là <b>AI Trợ lý PhoneStore</b>. Mình hiểu toàn bộ cấu trúc dự án này — từ sản phẩm, giỏ hàng, thanh toán, tài khoản, ví điện tử cho đến quản trị Admin.'); }, 300);
+                setTimeout(function() { addBotMsg('Bạn có thể <b>gõ câu hỏi</b> hoặc <b>chọn gợi ý</b> bên dưới. Mình sẽ trả lời ngay! 😊'); }, 900);
+                setTimeout(function() { renderSuggestions(); }, 1200);
+            }
+        }
+
+        function closeChat() {
+            chatOpen = false;
+            document.getElementById('chatWindow').classList.remove('open');
+            document.getElementById('chatFabIcon').className = 'fa-solid fa-headset';
+        }
+
+        var kb = [
+            // ——— TỔNG QUAN ———
+            { kw: ['dự án','project','website','phonestore','cửa hàng','giới thiệu'], tags:['intro','tongquan'], ans:'<b>PhoneStore</b> là website thương mại điện tử chuyên bán điện thoại, xây dựng bằng <b>ASP.NET Core 10</b> với giao diện <b>Dark Cyberpunk</b>. Kho dữ liệu gồm <b>151 sản phẩm</b> từ các thương hiệu lớn: Apple, Samsung, Xiaomi, OPPO, Sony, Nokia,… Hệ thống có đầy đủ: trang chủ (Flash Sale + SP mới + Xu hướng), giỏ hàng, thanh toán, ví điện tử, đánh giá, đơn hàng, và panel Admin quản lý.' },
+            { kw: ['công nghệ','tech','framework','asp.net','.net','core'], tags:['intro','congnghe'], ans:'Website dùng <b>ASP.NET Core (.NET 10)</b> với <b>Razor Pages + MVC</b>. CSDL <b>SQL Server</b> trên <code>.\\SQLEXPRESS</code>, xác thực bằng <b>Cookie Authentication</b>, phân quyền Admin/User. Giao diện dùng <b>Bootstrap 5</b> + <b>Font Awesome</b> + hiệu ứng CSS thuần (glassmorphism, gradient neon).' },
+
+            // ——— SẢN PHẨM ———
+            { kw: ['sản phẩm','điện thoại','phone','iphone','samsung','xiaomi','apple','oppo','nokia','sony','máy','sp','hàng'], tags:['sp','timsp'], ans:'Hiện có <b>151 sản phẩm</b> thuộc nhiều thương hiệu: Apple (iPhone), Samsung (Galaxy), Xiaomi (Redmi, POCO), OPPO, Sony (Xperia), Nokia,… Bạn có thể <b>tìm kiếm theo tên, hãng, khoảng giá</b> trên trang <b>Sản phẩm</b>. Mỗi máy có ảnh, thông số kỹ thuật động theo brand, đánh giá từ người dùng.' },
+            { kw: ['giá','khuyến mãi','giảm giá','flash sale','sale','km','giờ vàng'], tags:['gia','khuyenmai'], ans:'<b>Flash Sale Giờ Vàng</b> hiển thị các sản phẩm giảm sốc với bộ đếm ngược. Ngoài ra còn có mã giảm giá định kỳ. Bạn vào mục <b>Sản phẩm</b> để xem tất cả — bộ lọc giá, thương hiệu, tìm kiếm giúp bạn dễ dàng chọn máy ưng ý.' },
+            { kw: ['thông số','specs','cấu hình','ram','rom','chip','pin','màn hình'], tags:['sp','specs'], ans:'Thông số kỹ thuật được <b>sinh động</b> dựa trên brand, giá và tên máy — không hardcode. Ví dụ: iPhone sẽ có chip Apple A-series, Samsung có màn hình AMOLED, Xiaomi có pin lớn. Vào trang chi tiết từng sản phẩm để xem specs đầy đủ.' },
+            { kw: ['ảnh','hình','image','lỗi ảnh','hình ảnh'], tags:['sp','anh'], ans:'Ảnh sản phẩm lưu tại <code>/images/Products/</code>. Một số ảnh có tên chứa khoảng trắng hoặc viết hoa sai (ProductsOnePLUS, ProductsOneplus) gây lỗi hiển thị trên môi trường Linux phân biệt hoa-thường. Đội ngũ đang khắc phục dần.' },
+
+            // ——— GIỎ HÀNG & THANH TOÁN ———
+            { kw: ['giỏ hàng','cart','thêm','mua','đặt hàng','order'], tags:['cart','order'], ans:'Bạn thêm sản phẩm vào <b>Giỏ hàng</b> từ trang chi tiết. Vào <b>Giỏ hàng</b> để xem, sửa số lượng hoặc xoá. Bấm <b>Thanh toán</b> để nhập thông tin giao hàng. Sau khi đặt, đơn hàng được lưu vào CSDL và bạn sẽ thấy trong <b>Lịch sử đơn hàng</b> (nếu đã đăng nhập).' },
+            { kw: ['thanh toán','payment','cod','momo','vnpay','chuyển khoản','ck'], tags:['payment'], ans:'Chúng tôi hỗ trợ nhiều phương thức: <b>COD</b> (trả tiền khi nhận), <b>Ví MoMo</b>, <b>VNPAY</b>, <b>Chuyển khoản ngân hàng</b> và <b>Ví PhoneStore</b>. Mọi giao dịch đều được mã hóa SSL 256-bit, bảo mật tuyệt đối.' },
+            { kw: ['giao hàng','ship','vận chuyển','giao hỏa tốc','phí ship','free ship'], tags:['shipping'], ans:'<b>Giao hỏa tốc trong 2h</b> nội thành. Miễn phí giao hàng cho đơn trên <b>5.000.000₫</b>. Bảo hành <b>1 đổi 1 trong 30 ngày</b> đầu nếu có lỗi nhà sản xuất. Đội ngũ hỗ trợ 24/7 qua hotline.' },
+
+            // ——— TÀI KHOẢN & ĐĂNG NHẬP ———
+            { kw: ['đăng nhập','login','sign in','tài khoản','account','đăng kí','register','sign up','đăng xuất','logout'], tags:['auth','account'], ans:'Bạn đăng nhập/đăng kí qua modal <b>BẢO MẬT</b> ở góc phải header. Hệ thống dùng <b>Cookie Authentication</b> — mật khẩu được mã hóa bằng <b>PBKDF2</b> (PasswordHasher). Tài khoản mặc định: <b>Admin</b> — <code>Admin123@gmail.com</code> / <code>Admin123</code>. Tài khoản đăng kí mới sẽ có role <b>User</b>.' },
+            { kw: ['quên mật khẩu','reset','forgot','đổi mật khẩu'], tags:['auth','quenmk'], ans:'Tính năng quên mật khẩu hiện chưa có giao diện riêng. Bạn vui lòng liên hệ Admin hoặc gọi hotline để được cấp lại mật khẩu.' },
+
+            // ——— VÍ ĐIỆN TỬ ———
+            { kw: ['ví','wallet','nạp tiền','số dư','balance','vnd'], tags:['wallet'], ans:'<b>Ví PhoneStore</b> cho phép bạn nạp tiền và thanh toán đơn hàng. Người dùng đã đăng nhập: số dư lưu trong CSDL (<code>User.WalletBalance</code>), có lịch sử nạp/rút. Khách chưa đăng nhập: dùng session tạm (số dư sẽ mất khi logout). Vào mục <b>Ví</b> trên thanh menu để nạp tiền.' },
+            { kw: ['nạp','top up','nạp tiền','nạp ví'], tags:['wallet','nap'], ans:'Vào mục <b>Ví</b> → chọn số tiền hoặc nhập số tiền muốn nạp → bấm nạp. Số dư sẽ được cập nhật ngay trong CSDL (nếu đã đăng nhập).' },
+
+            // ——— ĐÁNH GIÁ & REVIEW ———
+            { kw: ['đánh giá','review','sao','rating','comment','nhận xét'], tags:['review'], ans:'Mỗi sản phẩm có mục <b>Đánh giá</b> ở trang chi tiết. Bạn có thể để lại đánh giá kèm số sao (1-5). Điểm trung bình và số lượng review hiển thị trên trang chủ và trang sản phẩm. Tất cả reviews lưu trong CSDL — dữ liệu bền vĩnh viễn.' },
+
+            // ——— ĐƠN HÀNG ———
+            { kw: ['đơn hàng','order','orders','lịch sử','đơn mua','hoá đơn'], tags:['order','lichsu'], ans:'Sau khi đặt hàng thành công, bạn xem <b>Lịch sử đơn hàng</b> trong mục <b>Tài khoản → Đơn hàng</b>. Admin có panel quản lý đơn hàng riêng, có thể cập nhật trạng thái (Chờ xác nhận → Đang giao → Đã giao / Đã huỷ). Đơn hàng lưu CSDL — không mất khi restart.' },
+            { kw: ['hủy đơn','huỷ đơn','cancel','trả hàng','hoàn tiền'], tags:['order','cancel'], ans:'Bạn có thể yêu cầu hủy đơn nếu đơn chưa ở trạng thái "Đang giao". Liên hệ Admin qua hotline hoặc chat để được xử lý nhanh. Hoàn tiền trong 3-5 ngày làm việc.' },
+
+            // ——— ADMIN ———
+            { kw: ['admin','quản lí','quản lý','dashboard','thống kê','doanh thu'], tags:['admin'], ans:'Panel <b>Admin</b> (Quản Lí) có các chức năng: <b>Dashboard</b> (thống kê doanh thu, đơn hàng, người dùng), <b>Quản lí Sản phẩm</b> (CRUD: thêm/sửa/xoá), <b>Quản lí Người dùng</b> (khoá/mở/xoá), <b>Quản lí Đơn hàng</b> (xem chi tiết, cập nhật trạng thái). Chỉ tài khoản role <b>Admin</b> mới truy cập được. Vào <b>/Admin/Dashboard</b>.' },
+
+            // ——— BẢO MẬT ———
+            { kw: ['bảo mật','security','mã hóa','csrf','xss','https','ssl','password','an toàn'], tags:['security'], ans:'Hệ thống áp dụng: <b>Cookie Authentication</b> an toàn với HTTP-only + Secure flag, mã hóa mật khẩu <b>PBKDF2</b> (PasswordHasher), <b>Anti-forgery Token</b> chống CSRF cho tất cả POST, phân quyền <b>Admin/User</b> qua Role-based Authorization, <b>HTTPS</b> toàn trình. Chi tiết xem trang <b>Bảo Mật</b> trên menu.' },
+
+            // ——— LIÊN HỆ ———
+            { kw: ['hotline','liên hệ','contact','hỗ trợ','help','trợ giúp'], tags:['contact'], ans:'Hotline hỗ trợ: <b>1900-xxxx</b> (miễn phí, 24/7). Bạn cũng có thể chat trực tiếp với AI này hoặc gửi email đến support@phonestore.vn. Đội ngũ PhoneStore luôn sẵn sàng hỗ trợ bạn!' },
+
+            // ——— MUA HÀNG ———
+            { kw: ['mua','cách mua','mua hàng','đặt','đặt mua','qui trình','quy trình'], tags:['mua'], ans:'Quy trình mua hàng đơn giản: <b>1.</b> Tìm sản phẩm (duyệt danh mục / tìm kiếm) → <b>2.</b> Vào trang chi tiết, chọn số lượng → <b>3.</b> Bấm "Thêm vào giỏ" → <b>4.</b> Vào Giỏ hàng → <b>5.</b> Bấm "Thanh toán", điền thông tin giao hàng → <b>6.</b> Xác nhận đơn hàng. Đơn sẽ hiện trong Lịch sử đơn hàng.' },
+        ];
+
+        var initialSuggestions = [
+            '📱 Giới thiệu về PhoneStore',
+            '💰 Cách mua hàng',
+            '🚚 Chính sách giao hàng',
+            '🔒 Thanh toán & bảo mật',
+            '📦 Xem đơn hàng',
+            '👑 Quản lí Admin',
+            '💳 Ví PhoneStore',
+            '⭐ Đánh giá sản phẩm'
+        ];
+        var usedSuggestions = [];
+
+        function addBotMsg(html) {
+            var el = document.getElementById('chatMessages');
+            var d = new Date();
+            var t = d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+            el.innerHTML += '<div class="msg bot">' + html + '<span class="time">' + t + '</span></div>';
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function addUserMsg(text) {
+            var el = document.getElementById('chatMessages');
+            var d = new Date();
+            var t = d.getHours().toString().padStart(2,'0') + ':' + d.getMinutes().toString().padStart(2,'0');
+            el.innerHTML += '<div class="msg user">' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '<span class="time">' + t + '</span></div>';
+            el.scrollTop = el.scrollHeight;
+            msgCount++;
+        }
+
+        function showTyping() {
+            var el = document.getElementById('chatMessages');
+            el.innerHTML += '<div class="msg bot" id="typingIndicator"><div class="typing-dots"><span></span><span></span><span></span></div></div>';
+            el.scrollTop = el.scrollHeight;
+        }
+
+        function hideTyping() {
+            var el = document.getElementById('typingIndicator');
+            if (el) el.remove();
+        }
+
+        function normalize(s) {
+            var r = s.toLowerCase();
+            r = r.replace(/à|á|ạ|ã|ả|ă|ắ|ằ|ẵ|ặ|ẳ|â|ấ|ầ|ẫ|ậ|ẩ/g,'a');
+            r = r.replace(/è|é|ẹ|ẽ|ẻ|ê|ế|ề|ễ|ệ|ể/g,'e');
+            r = r.replace(/ì|í|ị|ĩ|ỉ/g,'i');
+            r = r.replace(/ò|ó|ọ|õ|ỏ|ô|ố|ồ|ỗ|ộ|ổ|ơ|ớ|ờ|ỡ|ợ|ở/g,'o');
+            r = r.replace(/ù|ú|ụ|ũ|ủ|ư|ứ|ừ|ữ|ự|ử/g,'u');
+            r = r.replace(/ỳ|ý|ỵ|ỹ|ỷ/g,'y');
+            r = r.replace(/đ/g,'d');
+            r = r.replace(/[^a-z0-9\s]/g,' ');
+            return r.trim().replace(/\s+/g,' ');
+        }
+
+        function findAnswer(input) {
+            var norm = normalize(input);
+            if (!norm) return null;
+            var words = norm.split(/\s+/);
+
+            var best = null, bestScore = 0;
+            for (var i = 0; i < kb.length; i++) {
+                var kwNorm = kb[i]._norm;
+                if (!kwNorm) {
+                    kb[i]._norm = kb[i].kw.map(function(k){ return normalize(k); });
+                    kwNorm = kb[i]._norm;
+                }
+                var score = 0;
+                for (var j = 0; j < words.length; j++) {
+                    for (var k = 0; k < kwNorm.length; k++) {
+                        if (kwNorm[k].indexOf(words[j]) !== -1 || words[j].indexOf(kwNorm[k]) !== -1) {
+                            score += 2;
+                        }
+                    }
+                }
+                for (var k = 0; k < kwNorm.length; k++) {
+                    if (norm.indexOf(kwNorm[k]) !== -1) { score += 3; }
+                }
+                if (score > bestScore) { bestScore = score; best = kb[i]; }
+            }
+            return bestScore >= 3 ? best.ans : null;
+        }
+
+        function sendMessage() {
+            if (!chatOpen) { openChat(); return; }
+            var input = document.getElementById('chatInput');
+            var text = input.value.trim();
+            if (!text) return;
+            input.value = '';
+            addUserMsg(text);
+            document.getElementById('chatSendBtn').disabled = true;
+            showTyping();
+            setTimeout(function() {
+                hideTyping();
+                document.getElementById('chatSendBtn').disabled = false;
+                var ans = findAnswer(text);
+                if (ans) {
+                    addBotMsg(ans);
+                } else {
+                    addBotMsg('🤔 Mình chưa có sẵn câu trả lời cho "' + text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '". Bạn thử chọn <b>gợi ý</b> bên dưới hoặc diễn đạt lại câu hỏi nhé!');
+                }
+                renderSuggestions();
+            }, 600 + Math.random() * 400);
+        }
+
+        function handleSuggestion(text) {
+            addUserMsg(text);
+            var idx = usedSuggestions.indexOf(text);
+            if (idx === -1) usedSuggestions.push(text);
+            showTyping();
+            setTimeout(function() {
+                hideTyping();
+                var ans = findAnswer(text);
+                if (ans) addBotMsg(ans);
+                renderSuggestions();
+            }, 400 + Math.random() * 300);
+        }
+
+        function renderSuggestions() {
+            var el = document.getElementById('chatSuggestions');
+            var avail = initialSuggestions.filter(function(s) { return usedSuggestions.indexOf(s) === -1; });
+            if (avail.length === 0) {
+                el.innerHTML = '<div style="font-size:0.7rem;color:#64748b;width:100%;text-align:center;padding:4px 0;">— Bạn có thể gõ câu hỏi bất kì —</div>';
+                return;
+            }
+            var html = '';
+            for (var i = 0; i < Math.min(avail.length, 4); i++) {
+                html += '<span class="chip" onclick="handleSuggestion(\'' + avail[i].replace(/'/g,"\\'") + '\')">' + avail[i] + '</span>';
+            }
+            el.innerHTML = html;
+        }
+    </script>
+    <!-- ===== AUTH MODAL ===== -->
+    <div class="auth-overlay" id="authOverlay" onclick="if(event.target===this)closeAuthModal()">
+        <div class="auth-modal">
+            <button class="auth-close" onclick="closeAuthModal()">&times;</button>
+
+            <div class="auth-title" style="text-align:center;font-size:1.2rem;">&#x1f512; BẢO MẬT</div>
+            <div class="auth-subtitle" style="text-align:center;">Đăng nhập để trải nghiệm đầy đủ tính năng</div>
+
+            <!-- Tabs -->
+            <div class="auth-tabs" role="tablist">
+                <button class="auth-tab active" data-tab="login" onclick="switchAuthTab('login')"><i class="fa-solid fa-arrow-right-to-bracket"></i> Đăng nhập</button>
+                <button class="auth-tab" data-tab="register" onclick="switchAuthTab('register')"><i class="fa-solid fa-user-plus"></i> Đăng kí</button>
+            </div>
+
+            <!-- LOGIN PANEL -->
+            <div class="auth-panel active" id="panelLogin">
+                <div class="auth-form">
+                    <div class="form-group">
+                        <label>Email</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-envelope input-icon"></i>
+                            <input type="email" class="form-input" id="loginEmail" placeholder="your@email.com" autocomplete="email" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Mật khẩu</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-lock input-icon"></i>
+                            <input type="password" class="form-input" id="loginPassword" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="current-password" />
+                            <button type="button" class="pw-toggle" onclick="togglePw('loginPassword',this)" tabindex="-1" aria-label="Toggle password"><i class="fa-regular fa-eye"></i></button>
+                        </div>
+                    </div>
+
+                    <button class="auth-btn" id="loginBtn" onclick="handleLogin()">
+                        <span class="spinner"></span>
+                        <span class="btn-text"><i class="fa-solid fa-arrow-right-to-bracket me-1-5"></i> Đăng nhập</span>
+                    </button>
+
+                    <div class="auth-footer-text" id="loginError" style="color:#ef4444;font-size:0.78rem;display:none;"></div>
+                    <p class="auth-panel-note">Bằng cách đăng nhập, bạn đồng ý với <span style="color:#60a5fa;cursor:default;">Điều khoản</span> của chúng tôi.</p>
+                </div>
+            </div>
+
+            <!-- REGISTER PANEL -->
+            <div class="auth-panel" id="panelRegister">
+                <div class="auth-form">
+                    <div class="form-group">
+                        <label>Họ tên</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-user input-icon"></i>
+                            <input type="text" class="form-input" id="regName" placeholder="Nguyễn Văn A" autocomplete="name" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-envelope input-icon"></i>
+                            <input type="email" class="form-input" id="regEmail" placeholder="your@email.com" autocomplete="email" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Số điện thoại</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-phone input-icon"></i>
+                            <input type="tel" class="form-input" id="regPhone" placeholder="0123 456 789" autocomplete="tel" />
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Mật khẩu</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-lock input-icon"></i>
+                            <input type="password" class="form-input" id="regPassword" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="new-password" />
+                            <button type="button" class="pw-toggle" onclick="togglePw('regPassword',this)" tabindex="-1" aria-label="Toggle password"><i class="fa-regular fa-eye"></i></button>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Xác nhận mật khẩu</label>
+                        <div class="input-wrap">
+                            <i class="fa-solid fa-shield-halved input-icon"></i>
+                            <input type="password" class="form-input" id="regConfirm" placeholder="&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;&#8226;" autocomplete="new-password" />
+                            <button type="button" class="pw-toggle" onclick="togglePw('regConfirm',this)" tabindex="-1" aria-label="Toggle password"><i class="fa-regular fa-eye"></i></button>
+                        </div>
+                    </div>
+
+                    <button class="auth-btn" id="regBtn" onclick="handleRegister()">
+                        <span class="spinner"></span>
+                        <span class="btn-text"><i class="fa-solid fa-user-plus me-1-5"></i> Đăng kí</span>
+                    </button>
+
+                    <div class="auth-footer-text" id="regError" style="color:#ef4444;font-size:0.78rem;display:none;"></div>
+                    <p class="auth-panel-note">Bằng cách đăng kí, bạn đồng ý với <span style="color:#60a5fa;cursor:default;">Điều khoản</span> và <span style="color:#60a5fa;cursor:default;">Chính sách bảo mật</span>.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* ===== AUTH: TAB SWITCHING ===== */
+        function switchAuthTab(tab) {
+            var tabs = document.querySelectorAll('.auth-tab');
+            tabs.forEach(function(t) { t.classList.remove('active'); });
+            document.querySelector('.auth-tab[data-tab="' + tab + '"]').classList.add('active');
+            var panels = document.querySelectorAll('.auth-panel');
+            panels.forEach(function(p) { p.classList.remove('active'); });
+            document.getElementById('panel' + tab.charAt(0).toUpperCase() + tab.slice(1)).classList.add('active');
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('regError').style.display = 'none';
+        }
+
+        /* ===== AUTH: PASSWORD TOGGLE ===== */
+        function togglePw(inputId, btn) {
+            var inp = document.getElementById(inputId);
+            var icon = btn.querySelector('i');
+            if (inp.type === 'password') {
+                inp.type = 'text';
+                icon.className = 'fa-regular fa-eye-slash';
+            } else {
+                inp.type = 'password';
+                icon.className = 'fa-regular fa-eye';
+            }
+        }
+
+        /* ===== AUTH: MODAL OPEN/CLOSE ===== */
+        function openLoginModal() {
+            document.getElementById('authOverlay').classList.add('active');
+            switchAuthTab('login');
+            document.body.style.overflow = 'hidden';
+        }
+        function closeAuthModal() {
+            document.getElementById('authOverlay').classList.remove('active');
+            document.body.style.overflow = '';
+            document.getElementById('loginBtn').classList.remove('loading');
+            document.getElementById('regBtn').classList.remove('loading');
+        }
+
+        /* ===== AUTH: LOGIN ===== */
+        function handleLogin() {
+            var email = document.getElementById('loginEmail').value.trim();
+            var password = document.getElementById('loginPassword').value.trim();
+            var errEl = document.getElementById('loginError');
+            var btn = document.getElementById('loginBtn');
+
+            if (!email || !password) {
+                errEl.textContent = 'Vui lòng nhập email và mật khẩu';
+                errEl.style.display = 'block';
+                errEl.classList.remove('auth-error-shake'); void errEl.offsetWidth; errEl.classList.add('auth-error-shake');
+                return;
+            }
+
+            btn.classList.add('loading');
+            errEl.style.display = 'none';
+
+            fetch('/Auth/Login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'email=' + encodeURIComponent(email) + '&password=' + encodeURIComponent(password)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                btn.classList.remove('loading');
+                if (data.success) {
+                    closeAuthModal();
+                    location.reload();
+                } else {
+                    errEl.textContent = data.message;
+                    errEl.style.display = 'block';
+                    errEl.classList.remove('auth-error-shake'); void errEl.offsetWidth; errEl.classList.add('auth-error-shake');
+                }
+            })
+            .catch(function() {
+                btn.classList.remove('loading');
+                errEl.textContent = 'Lỗi kết nối, vui lòng thử lại';
+                errEl.style.display = 'block';
+                errEl.classList.remove('auth-error-shake'); void errEl.offsetWidth; errEl.classList.add('auth-error-shake');
+            });
+        }
+
+        /* ===== AUTH: REGISTER ===== */
+        function handleRegister() {
+            var fullName = document.getElementById('regName').value.trim();
+            var email = document.getElementById('regEmail').value.trim();
+            var phone = document.getElementById('regPhone').value.trim();
+            var password = document.getElementById('regPassword').value.trim();
+            var confirmPassword = document.getElementById('regConfirm').value.trim();
+            var errEl = document.getElementById('regError');
+            var btn = document.getElementById('regBtn');
+
+            if (!fullName || !email || !password || !confirmPassword) {
+                errEl.textContent = 'Vui lòng nhập đầy đủ thông tin';
+                errEl.style.display = 'block';
+                errEl.classList.remove('auth-error-shake'); void errEl.offsetWidth; errEl.classList.add('auth-error-shake');
+                return;
+            }
+            if (password !== confirmPassword) {
+                errEl.textContent = 'Mật khẩu xác nhận không khớp';
+                errEl.style.display = 'block';
+                errEl.classList.remove('auth-error-shake'); void errEl.offsetWidth; errEl.classList.add('auth-error-shake');
+                return;
+            }
+            if (password.length < 6) {
+                errEl.textContent = 'Mật khẩu phải có ít nhất 6 kí tự';
+                errEl.style.display = 'block';
+                errEl.classList.remove('auth-error-shake'); void errEl.offsetWidth; errEl.classList.add('auth-error-shake');
+                return;
+            }
+
+            btn.classList.add('loading');
+            errEl.style.display = 'none';
+
+            fetch('/Auth/Register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'fullName=' + encodeURIComponent(fullName) + '&email=' + encodeURIComponent(email) + '&phone=' + encodeURIComponent(phone) + '&password=' + encodeURIComponent(password) + '&confirmPassword=' + encodeURIComponent(confirmPassword)
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) {
+                btn.classList.remove('loading');
+                if (data.success) {
+                    switchAuthTab('login');
+                    document.getElementById('loginEmail').value = email;
+                    document.getElementById('loginPassword').value = '';
+                    errEl.textContent = '';
+                    errEl.style.display = 'none';
+                } else {
+                    errEl.textContent = data.message;
+                    errEl.style.display = 'block';
+                    errEl.classList.remove('auth-error-shake'); void errEl.offsetWidth; errEl.classList.add('auth-error-shake');
+                }
+            })
+            .catch(function() {
+                btn.classList.remove('loading');
+                errEl.textContent = 'Lỗi kết nối, vui lòng thử lại';
+                errEl.style.display = 'block';
+                errEl.classList.remove('auth-error-shake'); void errEl.offsetWidth; errEl.classList.add('auth-error-shake');
+            });
+        }
+
+        /* ===== TOAST ===== */
+        function showToast(message, type) {
+            if (!message) return;
+            var container = document.getElementById('toastContainer');
+            var icon = type === 'success' ? 'fa-solid fa-circle-check' : 'fa-solid fa-triangle-exclamation';
+            var toast = document.createElement('div');
+            toast.className = 'toast-item toast-' + (type || 'success');
+            toast.innerHTML = '<i class="' + icon + '"></i><span>' + message + '</span><button class="toast-close" onclick="this.parentElement.remove()">&times;</button>';
+            container.appendChild(toast);
+            requestAnimationFrame(function() { toast.classList.add('show'); });
+            setTimeout(function() {
+                toast.classList.remove('show');
+                toast.classList.add('hide');
+                setTimeout(function() { toast.remove(); }, 400);
+            }, 3500);
+        }
+
+        @{
+            var toasts = new List<string>();
+            if (TempData["Success"] is not null) { toasts.Add($"showToast({Json.Serialize(TempData["Success"])},'success')"); }
+            if (TempData["ReviewSuccess"] is not null) { toasts.Add($"showToast({Json.Serialize(TempData["ReviewSuccess"])},'success')"); }
+            if (TempData["Error"] is not null) { toasts.Add($"showToast({Json.Serialize(TempData["Error"])},'error')"); }
+        }
+        @if (toasts.Count > 0)
+        {
+            <text>document.addEventListener('DOMContentLoaded', function() { @Html.Raw(string.Join(";", toasts)) });</text>
+        }
+    </script>
+
+</body>

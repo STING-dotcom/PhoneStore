@@ -1,0 +1,315 @@
+@model PhoneStore.Models.Order
+@{
+    ViewData["Title"] = $"Đơn Hàng #{Model.Id}";
+    var payIcons = new Dictionary<string, string>
+    {
+        ["COD"] = "fa-solid fa-money-bill-wave",
+        ["Wallet"] = "fa-solid fa-wallet",
+        ["BankTransfer"] = "fa-solid fa-university",
+        ["ScratchCard"] = "fa-solid fa-sim-card",
+        ["MoMo"] = "fa-brands fa-vuejs",
+        ["VNPAY"] = "fa-solid fa-credit-card",
+    };
+    var payColors = new Dictionary<string, string>
+    {
+        ["COD"] = "#22c55e",
+        ["Wallet"] = "#ff6a00",
+        ["BankTransfer"] = "#3b82f6",
+        ["ScratchCard"] = "#ef4444",
+        ["MoMo"] = "#a855f7",
+        ["VNPAY"] = "#10b981",
+    };
+    var icon = payIcons.GetValueOrDefault(Model.PaymentMethod, "fa-solid fa-circle");
+    var payColor = payColors.GetValueOrDefault(Model.PaymentMethod, "#94a3b8");
+}
+
+<style>
+    .invoice-wrapper {
+        background: rgba(13, 18, 30, 0.45);
+        backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 24px;
+        padding: 40px;
+        margin-top: 20px;
+        margin-bottom: 50px;
+        box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    }
+    .success-header {
+        text-align: center;
+        padding-bottom: 30px;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.06);
+        margin-bottom: 30px;
+    }
+    .success-header .checkmark-ring {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: rgba(16, 185, 129, 0.1);
+        border: 3px solid #34d399;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 16px;
+        font-size: 2.5rem;
+        color: #34d399;
+        box-shadow: 0 0 30px rgba(16, 185, 129, 0.2);
+    }
+    .success-header h2 {
+        color: #ffffff;
+        font-weight: 900;
+        margin-bottom: 6px;
+    }
+    .success-header .order-id-badge {
+        background: rgba(255, 106, 0, 0.1);
+        border: 1px solid rgba(255, 106, 0, 0.3);
+        color: #ff6a00;
+        font-weight: 800;
+        padding: 6px 20px;
+        border-radius: 30px;
+        display: inline-block;
+        font-size: 1.1rem;
+    }
+    .invoice-section {
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid rgba(255, 255, 255, 0.06);
+        border-radius: 16px;
+        padding: 24px;
+        margin-bottom: 24px;
+    }
+    .invoice-section h6 {
+        color: #ff6a00;
+        font-weight: 800;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        margin-bottom: 14px;
+    }
+    .info-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+    }
+    .info-grid .info-item .label {
+        color: #64748b;
+        font-size: 0.78rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.3px;
+    }
+    .info-grid .info-item .value {
+        color: #f1f5f9;
+        font-weight: 700;
+        font-size: 0.95rem;
+    }
+    @@media (max-width: 576px) {
+        .info-grid { grid-template-columns: 1fr; }
+    }
+    .invoice-table { width: 100%; border-collapse: collapse; }
+    .invoice-table th {
+        color: #94a3b8;
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        padding: 10px 12px;
+        border-bottom: 2px solid rgba(255, 106, 0, 0.2);
+        text-align: left;
+    }
+    .invoice-table th:last-child,
+    .invoice-table td:last-child { text-align: right; }
+    .invoice-table th:nth-child(2),
+    .invoice-table td:nth-child(2) { text-align: center; }
+    .invoice-table td {
+        padding: 12px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        color: #f1f5f9;
+        font-size: 0.9rem;
+    }
+    .invoice-table tbody tr:hover {
+        background: rgba(255, 255, 255, 0.02);
+    }
+    .invoice-total-box {
+        background: linear-gradient(145deg, rgba(255, 106, 0, 0.06), rgba(238, 9, 121, 0.06));
+        border: 1px solid rgba(255, 106, 0, 0.2);
+        border-radius: 16px;
+        padding: 20px 24px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+    .invoice-total-box .total-label {
+        color: #94a3b8;
+        font-weight: 600;
+        font-size: 0.9rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    .invoice-total-box .total-amount {
+        background: linear-gradient(135deg, #ff0844, #ff6a00);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        font-size: 2rem;
+        font-weight: 900;
+    }
+    .btn-return {
+        background: linear-gradient(135deg, #ff6a00, #ee0979);
+        color: #ffffff;
+        border: none;
+        padding: 14px 32px;
+        border-radius: 14px;
+        font-weight: 800;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        text-decoration: none;
+        transition: all 0.3s;
+        display: inline-block;
+    }
+    .btn-return:hover {
+        filter: brightness(1.1);
+        box-shadow: 0 8px 30px rgba(238, 9, 121, 0.5);
+        transform: translateY(-2px);
+        color: #ffffff;
+    }
+    .payment-method-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 18px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 0.85rem;
+    }
+    .status-badge {
+        padding: 6px 16px;
+        border-radius: 30px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        background: rgba(251, 191, 36, 0.12);
+        color: #f59e0b;
+        border: 1px solid rgba(251, 191, 36, 0.3);
+    }
+</style>
+
+<div class="container py-4">
+    <nav aria-label="breadcrumb" class="mb-4">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-muted fw-bold">Trang Chủ</a></li>
+            <li class="breadcrumb-item active text-white fw-bold" aria-current="page">Đơn Hàng</li>
+        </ol>
+    </nav>
+
+    <div class="invoice-wrapper">
+        <div class="success-header">
+            <div class="checkmark-ring">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <h2>Đặt Hàng Thành Công!</h2>
+            <p class="text-muted mb-2" style="font-size: 0.9rem;">Cảm ơn bạn đã mua sắm tại <strong class="text-white">PhoneStore</strong></p>
+            <div class="order-id-badge"><i class="fa-solid fa-hashtag me-1"></i>Mã đơn: #@Model.Id.ToString("D6")</div>
+        </div>
+
+        <div class="row g-4">
+            <div class="col-lg-7">
+                <div class="invoice-section">
+                    <h6><i class="fa-solid fa-user me-2"></i>Thông Tin Khách Hàng</h6>
+                    <div class="info-grid">
+                        <div class="info-item">
+                            <div class="label">Họ Tên</div>
+                            <div class="value">@Model.CustomerName</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Số Điện Thoại</div>
+                            <div class="value">@Model.Phone</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Email</div>
+                            <div class="value">@Model.Email</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Địa Chỉ</div>
+                            <div class="value">@Model.Address</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Ngày Đặt</div>
+                            <div class="value">@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                        <div class="info-item">
+                            <div class="label">Ghi Chú</div>
+                            <div class="value">@(!string.IsNullOrEmpty(Model.Note) ? Model.Note : "—")</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="invoice-section">
+                    <h6><i class="fa-solid fa-box me-2"></i>Chi Tiết Sản Phẩm</h6>
+                    <div class="table-responsive">
+                        <table class="invoice-table">
+                            <thead>
+                                <tr>
+                                    <th>Sản Phẩm</th>
+                                    <th style="width: 80px;">SL</th>
+                                    <th style="width: 120px;">Đơn Giá</th>
+                                    <th style="width: 130px;">Thành Tiền</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var item in Model.Items)
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@item.ProductName</td>
+                                        <td style="text-align: center;">@item.Quantity</td>
+                                        <td style="text-align: center;">@item.Price.ToString("N0")đ</td>
+                                        <td style="font-weight: 700; color: #ff0844;">@item.Subtotal.ToString("N0")đ</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-5">
+                <div class="invoice-section">
+                    <h6><i class="fa-solid fa-credit-card me-2"></i>Phương Thức Thanh Toán</h6>
+                    <div class="payment-method-tag" style="background: rgba(@(payColor == "#22c55e" ? "34,197,94" : payColor == "#ff6a00" ? "255,106,0" : payColor == "#3b82f6" ? "59,130,246" : payColor == "#a855f7" ? "168,85,247" : payColor == "#10b981" ? "16,185,129" : "100,116,139"), 0.1); border: 1px solid rgba(@(payColor == "#22c55e" ? "34,197,94" : payColor == "#ff6a00" ? "255,106,0" : payColor == "#3b82f6" ? "59,130,246" : payColor == "#a855f7" ? "168,85,247" : payColor == "#10b981" ? "16,185,129" : "100,116,139"), 0.3); color: @payColor;">
+                        <i class="@icon"></i> @Model.PaymentMethodLabel
+                    </div>
+                </div>
+
+                <div class="invoice-section">
+                    <h6><i class="fa-solid fa-truck me-2"></i>Trạng Thái Đơn Hàng</h6>
+                    <div class="d-flex align-items-center gap-3 mb-3">
+                        <span class="status-badge"><i class="fa-regular fa-clock me-1"></i>@Model.Status</span>
+                    </div>
+                    <div style="position: relative; padding-left: 24px;">
+                        <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: linear-gradient(to bottom, #ff6a00, rgba(255,106,0,0.1));"></div>
+                        <div class="mb-3">
+                            <div style="font-weight: 700; color: #ff6a00; font-size: 0.85rem;"><i class="fa-solid fa-circle-check me-2" style="font-size: 0.6rem;"></i>Đơn hàng đã được xác nhận</div>
+                            <div style="color: #64748b; font-size: 0.78rem;">@Model.OrderDate.ToString("dd/MM/yyyy HH:mm")</div>
+                        </div>
+                        <div class="mb-3" style="opacity: 0.5;">
+                            <div style="color: #94a3b8; font-size: 0.85rem;"><i class="fa-regular fa-circle me-2" style="font-size: 0.6rem;"></i>Đang chuẩn bị hàng</div>
+                        </div>
+                        <div style="opacity: 0.5;">
+                            <div style="color: #94a3b8; font-size: 0.85rem;"><i class="fa-regular fa-circle me-2" style="font-size: 0.6rem;"></i>Đang giao hàng</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="invoice-total-box">
+                    <div>
+                        <div class="total-label"><i class="fa-solid fa-receipt me-2"></i>Tổng Thanh Toán</div>
+                        <div style="color: #64748b; font-size: 0.75rem; margin-top: 4px;">Bao gồm VAT</div>
+                    </div>
+                    <div class="total-amount">@Model.TotalAmount.ToString("N0")đ</div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <a href="/Product" class="btn-return"><i class="fa-solid fa-store me-2"></i>Tiếp Tục Mua Sắm</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
